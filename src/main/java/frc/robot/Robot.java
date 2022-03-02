@@ -124,7 +124,7 @@ public class Robot extends TimedRobot {
     TalonSRX popper = new TalonSRX(POPPER_ID);
 
     /** the number of ticks in a full rotation */
-    static final int encoderRotation = 4096;
+    public static final int encoderRotation = 4096;
 
     // talon config
 
@@ -166,7 +166,7 @@ public class Robot extends TimedRobot {
     /** true if ROBOT_SENSOR is pulled low */
     boolean isPracticeRobot;
     /** the circumference of the drive wheels */
-    double circumference;
+    public double circumference;
 
     /** weather to use Arcade (true) or tank (false) style controls */
     boolean ArcadeDrive = true;

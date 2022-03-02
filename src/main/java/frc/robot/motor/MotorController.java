@@ -9,6 +9,7 @@ public interface MotorController {
     public void setDistance(double inches);
     public void setBrakeMode(boolean brake);
     public void setInverted(boolean inverted);
+    public void follow(MotorController leader);
 
     // Encoder functions
     public void setSensorSource(); // todo
