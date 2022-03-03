@@ -52,19 +52,19 @@ public final class K {
     // ##########################################
 
     // can bus IDs. Can be found in Phoenix Tuner
-    public static final int LEFT_MASTER_ID = 2;
+    public static final int LEFT_MASTER_ID = 9;
     public static final IMotorController.Type LEFT_MASTER_TYPE = Type.Talon;
-    public static final int LEFT_SLAVE_ID = 3;
+    public static final int LEFT_SLAVE_ID = 10;
     public static final IMotorController.Type LEFT_SLAVE_TYPE = Type.Talon;
-    public static final int RIGHT_MASTER_ID = 4;
+    public static final int RIGHT_MASTER_ID = 11;
     public static final IMotorController.Type RIGHT_MASTER_TYPE = Type.Talon;
-    public static final int RIGHT_SLAVE_ID = 5;
+    public static final int RIGHT_SLAVE_ID = 12;
     public static final IMotorController.Type RIGHT_SLAVE_TYPE = Type.Talon;
-    public static final int WINCH_MOTOR_ID = 11;
+    public static final int WINCH_MOTOR_ID = 15;
     public static final IMotorController.Type WINCH_MOTOR_TYPE = Type.Talon;
-    public static final int INTAKE_ID = 12;
+    public static final int INTAKE_ID = 14;
     public static final IMotorController.Type INTAKE_TYPE = Type.Talon;
-    public static final int POPPER_ID = 10;
+    public static final int POPPER_ID = 13;
     public static final IMotorController.Type POPPER_TYPE = Type.Talon;
 
     /** the number of ticks in a full rotation */
