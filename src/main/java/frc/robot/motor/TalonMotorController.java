@@ -8,7 +8,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import frc.robot.Robot;
 
-public class TalonMotorController implements MotorController {
+public class TalonMotorController implements IMotorController {
     Robot robot;
     TalonSRX controller;
 
@@ -43,7 +43,7 @@ public class TalonMotorController implements MotorController {
     }
 
     @Override
-    public void follow(MotorController leader) {
+    public void follow(IMotorController leader) {
         if (!(leader instanceof TalonMotorController))
             throw new IllegalArgumentException("Leader must be the same type of motor controller as the follower");
         controller.follow(((TalonMotorController)leader).controller);

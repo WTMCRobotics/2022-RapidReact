@@ -1,7 +1,6 @@
 package frc.robot.motor;
 
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.EncoderType;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxRelativeEncoder;
@@ -9,7 +8,7 @@ import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMaxLowLevel.PeriodicFrame;
 
-public class SparkMotorController implements MotorController {
+public class SparkMotorController implements IMotorController {
     CANSparkMax controller;
     RelativeEncoder encoder;
     SparkMaxPIDController pid;
@@ -46,7 +45,7 @@ public class SparkMotorController implements MotorController {
     }
 
     @Override
-    public void follow(MotorController leader) {
+    public void follow(IMotorController leader) {
         if (!(leader instanceof SparkMotorController))
             throw new IllegalArgumentException("Leader must be the same type of motor controller as the follower");
         controller.follow(((SparkMotorController)leader).controller);

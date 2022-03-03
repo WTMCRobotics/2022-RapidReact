@@ -2,14 +2,14 @@ package frc.robot.motor;
 
 import frc.robot.Gains;
 
-public interface MotorController {
+public interface IMotorController {
     // Motor control functions
     public void reset();
     public void setSpeed(double speed);
     public void setDistance(double inches);
     public void setBrakeMode(boolean brake);
     public void setInverted(boolean inverted);
-    public void follow(MotorController leader);
+    public void follow(IMotorController leader);
 
     // Encoder functions
     public void setSensorSource(); // todo
