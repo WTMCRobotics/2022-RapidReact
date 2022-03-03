@@ -1,18 +1,16 @@
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-
 import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.motor.IMotorController;
 
 public class RatchetMotor extends TwoStateMotor {
 
     int backwardTime = 0;
 
-    RatchetMotor(double speed, TalonSRX motor, DigitalInput defaultSensor, DigitalInput setSensor) {
+    RatchetMotor(double speed, IMotorController motor, DigitalInput defaultSensor, DigitalInput setSensor) {
         super(speed, motor, defaultSensor, setSensor);
     }
-    RatchetMotor(double speed, double speedOffset, TalonSRX motor, DigitalInput defaultSensor, DigitalInput setSensor) {
+    RatchetMotor(double speed, double speedOffset, IMotorController motor, DigitalInput defaultSensor, DigitalInput setSensor) {
         super(speed, speedOffset, motor, defaultSensor, setSensor);
     }
 
@@ -23,12 +21,12 @@ public class RatchetMotor extends TwoStateMotor {
         isDefault = defaultSensor.get();
         isSet = setSensor.get();
         if(--backwardTime > 0){
-            motor.set(ControlMode.PercentOutput, ((direction * speed ) + speedOffset) * -1);
+            motor.setSpeed(((direction * speed ) + speedOffset) * -1);
         } else if (isSet && direction == 1 || isDefault && direction == -1) {
-            motor.set(ControlMode.PercentOutput, (direction * speed) + speedOffset);
+            motor.setSpeed((direction * speed) + speedOffset);
             //System.out.println("moving at "+ ((direction * speed) + speedOffset));
         } else {
-            motor.set(ControlMode.PercentOutput, 0);
+            motor.setSpeed(0);
             //System.out.println("stopped");
         }
     }

@@ -1,10 +1,7 @@
 package frc.robot;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-
 import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.motor.IMotorController;
 
 /**
  * this class was made in 2020 by Nate Stringham and others to be used to the drawbridge and hang mechanisms on the 2020 robot
@@ -20,7 +17,7 @@ class TwoStateMotor {
     double speed; // the speed that the motor should travel at
     double speedOffset = 0; // used to combat gravity, positive values cause faster sets and slower unsets
                            // (if speed is negative this value will have the opposite effect)
-    TalonSRX motor; // the motor to be controlled
+    IMotorController motor; // the motor to be controlled
     DigitalInput defaultSensor; // the sensor that will be true when the motor is in the default position
     DigitalInput setSensor; // the sensor that will be true when the motor is in the set position
     boolean isDefault; // the state of the default Sensor
@@ -33,12 +30,12 @@ class TwoStateMotor {
      * @param defaultSensor the sensor that will be true when the motor is in the default position
      * @param setSensor the sensor that will be true when the motor is in the set position
      */
-    TwoStateMotor(double speed, TalonSRX motor, DigitalInput defaultSensor, DigitalInput setSensor) {
+    TwoStateMotor(double speed, IMotorController motor, DigitalInput defaultSensor, DigitalInput setSensor) {
         this.speed = speed;
         this.motor = motor;
         this.defaultSensor = defaultSensor;
         this.setSensor = setSensor;
-        this.motor.setNeutralMode(NeutralMode.Brake);
+        this.motor.setBrakeMode(true);
     }
 
     /**
@@ -49,7 +46,7 @@ class TwoStateMotor {
      * @param defaultSensor the sensor that will be true when the motor is in the default position
      * @param setSensor the sensor that will be true when the motor is in the set position
      */
-    TwoStateMotor(double speed, double speedOffset, TalonSRX motor, DigitalInput defaultSensor, DigitalInput setSensor) {
+    TwoStateMotor(double speed, double speedOffset, IMotorController motor, DigitalInput defaultSensor, DigitalInput setSensor) {
         this(speed, motor, defaultSensor, setSensor);
         this.speedOffset = speedOffset;
     }
@@ -63,10 +60,10 @@ class TwoStateMotor {
         isDefault = !defaultSensor.get();
         isSet = !setSensor.get();
         if (!isSet && direction == 1 || !isDefault && direction == -1) {
-            motor.set(ControlMode.PercentOutput, (direction * speed) + speedOffset);
+            motor.setSpeed((direction * speed) + speedOffset);
             //System.out.println("moving at "+ ((direction * speed) + speedOffset));
         } else {
-            motor.set(ControlMode.PercentOutput, 0);
+            motor.setSpeed(0);
             //System.out.println("stopped");
         }
     }

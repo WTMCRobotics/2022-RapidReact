@@ -6,6 +6,7 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
+import frc.robot.K;
 import frc.robot.Robot;
 
 public class TalonMotorController implements IMotorController {
@@ -29,7 +30,7 @@ public class TalonMotorController implements IMotorController {
 
     @Override
     public void setDistance(double inches) {
-        controller.set(ControlMode.MotionMagic, inches * Robot.encoderRotation / robot.circumference);
+        controller.set(ControlMode.MotionMagic, inches * K.encoderRotation / robot.circumference);
     }
 
     @Override
@@ -51,12 +52,12 @@ public class TalonMotorController implements IMotorController {
 
     @Override
     public void setSensorSource() {
-        controller.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, Robot.PID_LOOP_IDX, Robot.TIMEOUT_MS);
+        controller.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, K.PID_LOOP_IDX, K.TIMEOUT_MS);
     }
 
     @Override
     public void setNeutralDeadband(double percent) {
-        controller.configNeutralDeadband(percent, Robot.TIMEOUT_MS);
+        controller.configNeutralDeadband(percent, K.TIMEOUT_MS);
     }
 
     @Override
@@ -66,25 +67,25 @@ public class TalonMotorController implements IMotorController {
 
     @Override
     public void setStatusFramePeriod(int period) {
-        controller.setStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, period, Robot.TIMEOUT_MS);
-        controller.setStatusFramePeriod(StatusFrameEnhanced.Status_10_Targets, period, Robot.TIMEOUT_MS);
+        controller.setStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, period, K.TIMEOUT_MS);
+        controller.setStatusFramePeriod(StatusFrameEnhanced.Status_10_Targets, period, K.TIMEOUT_MS);
     }
 
     @Override
     public void setOutputLimits(double nominalForward, double nominalReverse, double peakForward, double peakReverse) {
-        controller.configNominalOutputForward(nominalForward, Robot.TIMEOUT_MS);
-        controller.configNominalOutputReverse(nominalReverse, Robot.TIMEOUT_MS);
-        controller.configPeakOutputForward(peakForward, Robot.TIMEOUT_MS);
-        controller.configPeakOutputReverse(peakReverse, Robot.TIMEOUT_MS);
+        controller.configNominalOutputForward(nominalForward, K.TIMEOUT_MS);
+        controller.configNominalOutputReverse(nominalReverse, K.TIMEOUT_MS);
+        controller.configPeakOutputForward(peakForward, K.TIMEOUT_MS);
+        controller.configPeakOutputReverse(peakReverse, K.TIMEOUT_MS);
     }
 
     @Override
     public void setPID(double P, double I, double D, double F) {
-        controller.selectProfileSlot(Robot.SLOT_IDX, Robot.PID_LOOP_IDX);
-        controller.config_kP(Robot.SLOT_IDX, P, Robot.TIMEOUT_MS);
-        controller.config_kI(Robot.SLOT_IDX, I, Robot.TIMEOUT_MS);
-        controller.config_kD(Robot.SLOT_IDX, D, Robot.TIMEOUT_MS);
-        controller.config_kF(Robot.SLOT_IDX, F, Robot.TIMEOUT_MS);
+        controller.selectProfileSlot(K.SLOT_IDX, K.PID_LOOP_IDX);
+        controller.config_kP(K.SLOT_IDX, P, K.TIMEOUT_MS);
+        controller.config_kI(K.SLOT_IDX, I, K.TIMEOUT_MS);
+        controller.config_kD(K.SLOT_IDX, D, K.TIMEOUT_MS);
+        controller.config_kF(K.SLOT_IDX, F, K.TIMEOUT_MS);
     }
 
     @Override
@@ -99,8 +100,8 @@ public class TalonMotorController implements IMotorController {
 
     @Override
     public void setMotionSpeed(double cruiseVelocity, double acceleration) {
-        controller.configMotionCruiseVelocity(cruiseVelocity, Robot.TIMEOUT_MS);
-        controller.configMotionAcceleration(acceleration, Robot.TIMEOUT_MS);
+        controller.configMotionCruiseVelocity(cruiseVelocity, K.TIMEOUT_MS);
+        controller.configMotionAcceleration(acceleration, K.TIMEOUT_MS);
     }
 
     @Override

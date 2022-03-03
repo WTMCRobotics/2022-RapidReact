@@ -1,6 +1,7 @@
 package frc.robot.motor;
 
 import frc.robot.Gains;
+import frc.robot.Robot;
 
 public interface IMotorController {
     // Motor control functions
@@ -26,4 +27,9 @@ public interface IMotorController {
     public void setMotionSpeed(double cruiseVelocity, double acceleration);
     public double getEncoderPosition();
     public void setEncoderPosition(double position);
+
+    public static enum Type {
+        Talon,
+        SparkMax
+    }
 }
