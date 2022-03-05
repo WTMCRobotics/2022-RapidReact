@@ -7,15 +7,11 @@
 
 package frc.robot;
 
+import frc.robot.motor.*;
+
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import com.ctre.phoenix.ErrorCode;
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.Compressor;
@@ -66,74 +62,14 @@ public class Robot extends TimedRobot {
     /** a list of instructions to follow */
     ArrayList<Instruction> autonInstructions = new ArrayList<Instruction>();
 
-    /** the width of the robot in inches */
-    public static final float robotWidth = 32;
-    /** the length of the robot in inches */
-    public static final float robotLength = 38;
-
-    // ##########################################
-    // Digital IO related constants
-    // ##########################################
-
-    // DIO IDs
-
-    /** this should be pulled low on the 2016 Practice Robot */
-    static final int ROBOT_SENSOR_ID = 9;
-    /** sensor for when the winch is extended */
-    static final int HANG_SET_SENSOR_ID = 0;
-    /** sensor for when the winch is retracted */
-    static final int HANG_DEFAULT_SENSOR_ID = 1;
-    /** sensor for when a ball is waiting to be popped up */
-    static final int INTAKE_SENSOR_ID = 2;
-    /** sensor for counting balls */
-    static final int INTAKE_COUNTER_SENSOR_ID = 3;
-
-    // Binary Sensors
-
-    /** this should be pulled low on the 2016 Practice Robot */
-    static final DigitalInput ROBOT_SENSOR = new DigitalInput(ROBOT_SENSOR_ID);
-    /** sensor for when the winch is extended */ 
-    static final DigitalInput HANG_SET_SENSOR = new DigitalInput(HANG_SET_SENSOR_ID);
-    /** sensor for when the winch is retracted */
-    static final DigitalInput HANG_DEFAULT_SENSOR = new DigitalInput(HANG_DEFAULT_SENSOR_ID);
-    /** sensor for when a ball is waiting to be popped up */
-    static final DigitalInput INTAKE_SENSOR = new DigitalInput(INTAKE_SENSOR_ID);
-    /** sensor for counting balls */
-    static final DigitalInput POPPER_SENSOR = new DigitalInput(INTAKE_COUNTER_SENSOR_ID);
-
-    // ##########################################
-    // talon related constants and variables
-    // ##########################################
-
-    // can bus IDs. Can be found in Phoenix Tuner
-    static final int LEFT_MASTER_ID = 2;
-    static final int LEFT_SLAVE_ID = 3;
-    static final int RIGHT_MASTER_ID = 4;
-    static final int RIGHT_SLAVE_ID = 5;
-    static final int WINCH_MOTOR_ID = 11;
-    static final int INTAKE_ID = 12;
-    static final int POPPER_ID = 10;
-
     // creates objects for the talons
-    public TalonSRX leftMaster = new TalonSRX(LEFT_MASTER_ID);
-    TalonSRX leftSlave = new TalonSRX(LEFT_SLAVE_ID);
-    public TalonSRX rightMaster = new TalonSRX(RIGHT_MASTER_ID);
-    TalonSRX rightSlave = new TalonSRX(RIGHT_SLAVE_ID);
-    TalonSRX hangMotor = new TalonSRX(WINCH_MOTOR_ID);
-    TalonSRX intake = new TalonSRX(INTAKE_ID);
-    TalonSRX popper = new TalonSRX(POPPER_ID);
-
-    /** the number of ticks in a full rotation */
-    static final int encoderRotation = 4096;
-
-    // talon config
-
-    /** Which PID slot to pull gains from */
-    public static final int SLOT_IDX = 0;
-    /** Which PID loop to pull gains from */
-    public static final int PID_LOOP_IDX = 0;
-    /** amount of time in ms to wait for confirmation */
-    public static final int TIMEOUT_MS = 30;
+    public IMotorController leftMaster = MotorControllerFactory.create(this, K.LEFT_MASTER_ID, K.LEFT_MASTER_TYPE);
+    IMotorController leftSlave = MotorControllerFactory.create(this, K.LEFT_SLAVE_ID, K.LEFT_SLAVE_TYPE);
+    public IMotorController rightMaster = MotorControllerFactory.create(this, K.RIGHT_MASTER_ID, K.RIGHT_MASTER_TYPE);
+    IMotorController rightSlave = MotorControllerFactory.create(this, K.RIGHT_SLAVE_ID, K.RIGHT_SLAVE_TYPE);
+    IMotorController hangMotor = MotorControllerFactory.create(this, K.WINCH_MOTOR_ID, K.WINCH_MOTOR_TYPE);
+    IMotorController intake = MotorControllerFactory.create(this, K.INTAKE_ID, K.INTAKE_TYPE);
+    IMotorController popper = MotorControllerFactory.create(this, K.POPPER_ID, K.POPPER_TYPE);
 
     // ##########################################
     // drivetrain and pid related constants and variables
@@ -141,11 +77,8 @@ public class Robot extends TimedRobot {
 
     // the object that is the navX-MXP
     public AHRS gyro = new AHRS(Port.kMXP);
-    static final Gains PRACTICE_ROTATION_GAINS = new Gains(0.004, 0.003, 0.001, 0.0, 0, 0.0);
-    static final Gains COMPETITION_ROTATION_GAINS = new Gains(0.06, 0.003, 0.001, 0.0, 0, 0.0);
     static Gains rotationGains;
 
-    static final Constraints ROTATIONAL_GAIN_CONSTRAINTS = new Constraints(Double.POSITIVE_INFINITY, 20); // m/s and m/s^2
     ProfiledPIDController rotationPID;
 
     /** true if test is done */
@@ -163,46 +96,23 @@ public class Robot extends TimedRobot {
     /** The margin of error for angles when turning in auton */
     private static final double angleMarginOfError = 5;
 
-    /** true if ROBOT_SENSOR is pulled low */
+    /** true if K.ROBOT_SENSOR is pulled low */
     boolean isPracticeRobot;
     /** the circumference of the drive wheels */
-    double circumference;
+    public double circumference;
 
     /** weather to use Arcade (true) or tank (false) style controls */
     boolean ArcadeDrive = true;
 
-    static final Gains PRACTICE_ROBOT_GAINS = new Gains(0.2, 0.00035, 1.5, 0.2, 0, 1.0);
-    static final Gains COMPETITION_ROBOT_GAINS = new Gains(0.35, 0.00001, 100, 0.2, 0, 1.0);
     static Gains gains; // used for drivetrain motion magic when moving and is ste to
-                        // PRACTICE_ROBOT_GAINS or COMPETITION_ROBOT_GAINS
-
-    // ##########################################
-    // intake and popper related constants and variables
-    // ##########################################
-
-    /* the maximum number of balls that can be held */
-    static final int MAX_BALLS = 3;
-
-    // the speed of the intake motor. Accepts values between 1 and -1.
-    static final double INTAKE_SPEED_IN = 0.25;
-    static final double INTAKE_SPEED_OUT = -0.25;
-
-    // the speed of the popper motor. Accepts values between 1 and -1.
-    static final double POPPER_SPEED_IN = 0.8;
-    static final double POPPER_SPEED_OUT = -0.2;
-
-    // the Amount of time popper motor should go for in robot cycles.
-    static final int POPPER_TIME_IN = 35;
-    static final int POPPER_TIME_OUT = 10;
+                        // K.PRACTICE_ROBOT_GAINS or COMPETITION_ROBOT_GAINS
 
     // the amount of time in robot cycles that this will move
     int popperInTime = 0;
     int popperOutTime = 0;
 
     int popperCounterTime; // the number of cycles that the counter sensor has been interrupted for
-    static final int INTAKE_COUNTER_COUNT_TIME = 3; // the number of cycles that a ball interrupts the sensor for when passing
     int intakeTime; // the number of cycles that the counter sensor has bean interrupted for
-    static final int POPPER_COUNTER_JAM_TIME = 20; // the number of cycles that constitutes a popper jam
     int ballsStored = 0; // the number of balls in the robot
 
     // ##########################################
@@ -210,7 +120,7 @@ public class Robot extends TimedRobot {
     // ##########################################
 
     // declares objects for the TwoStateMotor class
-    TwoStateMotor hang = new RatchetMotor(0.5, -0.1, hangMotor, HANG_DEFAULT_SENSOR, HANG_SET_SENSOR);;
+    TwoStateMotor hang = new RatchetMotor(0.5, -0.1, hangMotor, K.HANG_DEFAULT_SENSOR, K.HANG_SET_SENSOR);;
 
     // ##########################################
     // Controller related constants and variables
@@ -221,14 +131,6 @@ public class Robot extends TimedRobot {
     double rightjoyY; // y-axis of the right joystick on the driver's controller
     double leftjoyX; // x-axis of the left joystick on the driver's controller
     double rightjoyX; // x-axis of the right joystick on the driver's controller
-
-    static final int START = 7; // the mapping of the start button on a xbox controller
-    static final int SELECT = 8; // the mapping of the select button on a xbox controller
-    static final int A_BUTTON = 1; // the mapping of the A button on a xbox controller
-    static final int R_STICK = 10; // the mapping of the right shoulder on a xbox controller
-    static final int L_STICK = 9; // the mapping of the left shoulder on a xbox controller
-    static final int R_SHOULDER = 6; // the mapping of the right shoulder on a xbox controller
-    static final int L_SHOULDER = 5; // the mapping of the left shoulder on a xbox controller
 
     // these variables should be updated in teleopPeriodic()
     boolean arcadeButton; // true if the button that selects arcade mode is pressed
@@ -241,24 +143,18 @@ public class Robot extends TimedRobot {
     boolean popperOutButton; // true if the button that reverses the popper is pressed
 
     // ##########################################
-    // Pneumatics related constants and variables
+    // Pneumatics related variables
     // ##########################################
-
-    static final int PCM_DRAWBRIDGE_IN = 1;
-    static final int PCM_DRAWBRIDGE_OUT = 0;
-
-    static final int PCM_RATCHET = 2;
 
     Compressor compressor = null;
 
-    DoubleSolenoid drawbridgeSol = new DoubleSolenoid(1, PneumaticsModuleType.CTREPCM, PCM_DRAWBRIDGE_IN, PCM_DRAWBRIDGE_OUT);
-    Solenoid hangSol = new Solenoid(1, PneumaticsModuleType.CTREPCM, PCM_RATCHET);
+    DoubleSolenoid drawbridgeSol = new DoubleSolenoid(1, PneumaticsModuleType.CTREPCM, K.PCM_DRAWBRIDGE_IN, K.PCM_DRAWBRIDGE_OUT);
+    Solenoid hangSol = new Solenoid(1, PneumaticsModuleType.CTREPCM, K.PCM_RATCHET);
 
     Pixy2 pixy;
     GalacticSearchMode galacticSearch;
     GalacticSearchMode[] galacticSearchResults = new GalacticSearchMode[20];
     int galacticSearchNext = 0;
-    static final String[] galacticSearchNames = {"Red A", "Blue A", "Red B", "Blue B"};
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -281,96 +177,87 @@ public class Robot extends TimedRobot {
 
         SmartDashboard.putData("Path", PATH_CHOOSER);
 
-        isPracticeRobot = !ROBOT_SENSOR.get();
+        isPracticeRobot = !K.ROBOT_SENSOR.get();
         if (isPracticeRobot) {
             circumference = 6 * Math.PI;
-            gains = PRACTICE_ROBOT_GAINS;
-            rotationGains = PRACTICE_ROTATION_GAINS;
+            gains = K.PRACTICE_ROBOT_GAINS;
+            rotationGains = K.PRACTICE_ROTATION_GAINS;
             System.out.println("using 6 inch wheels");
         } else {
             circumference = 8 * Math.PI;
-            gains = COMPETITION_ROBOT_GAINS;
-            rotationGains = COMPETITION_ROTATION_GAINS;
+            gains = K.COMPETITION_ROBOT_GAINS;
+            rotationGains = K.COMPETITION_ROTATION_GAINS;
             System.out.println("using 8 inch wheels");
         }
 
-        rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, ROTATIONAL_GAIN_CONSTRAINTS);
+        rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
-        initializeTalon(leftMaster, NeutralMode.Brake, false);
-        initializeTalon(leftSlave, NeutralMode.Brake, false);
-        initializeTalon(rightMaster, NeutralMode.Brake, true);
-        initializeTalon(rightSlave, NeutralMode.Brake, true);
-        initializeTalon(hangMotor, NeutralMode.Brake, false);
-        initializeTalon(intake, NeutralMode.Coast, false);
-        initializeTalon(popper, NeutralMode.Coast, false);
+        initializeMotor(leftMaster, true, false);
+        initializeMotor(leftSlave, true, false);
+        initializeMotor(rightMaster, true, true);
+        initializeMotor(rightSlave, true, true);
+        initializeMotor(hangMotor, true, false);
+        initializeMotor(intake, false, false);
+        initializeMotor(popper, false, false);
 
         initializeMotionMagicMaster(rightMaster);
         initializeMotionMagicMaster(leftMaster);
 
-        rightSlave.set(ControlMode.Follower, RIGHT_MASTER_ID);
-        leftSlave.set(ControlMode.Follower, LEFT_MASTER_ID);
+        rightSlave.follow(rightMaster);
+        leftSlave.follow(leftMaster);
         gyro.reset();
 
         pixy = Pixy2.createInstance(new SPILink());
         pixy.init();
     }
 
-    public void initializeTalon(TalonSRX talon, NeutralMode neutralMode, boolean inverted) {
+    public void initializeMotor(IMotorController talon, boolean neutralMode, boolean inverted) {
         /* Ensure motor output is neutral during init */
-        talon.set(ControlMode.PercentOutput, 0);
+        talon.setSpeed(0);
 
         /* Factory Default all hardware to prevent unexpected behavior */
-        talon.configFactoryDefault();
+        talon.reset();
 
         /* Set Neutral mode */
-        talon.setNeutralMode(neutralMode);
+        talon.setBrakeMode(neutralMode);
 
         /* Configure output direction */
         talon.setInverted(inverted);
     }
 
-    public void initializeMotionMagicMaster(TalonSRX masterTalon) {
+    public void initializeMotionMagicMaster(IMotorController masterTalon) {
         /* Factory default hardware to prevent unexpected behavior */
-        masterTalon.configFactoryDefault();
+        masterTalon.reset();
 
         /* Configure Sensor Source for Primary PID */
-        masterTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, PID_LOOP_IDX, TIMEOUT_MS);
+        masterTalon.setSensorSource();
 
         /*
          * set deadband to super small 0.001 (0.1 %). The default deadband is 0.04 (4 %)
          */
-        masterTalon.configNeutralDeadband(0.001, TIMEOUT_MS);
+        masterTalon.setNeutralDeadband(0.001);
 
         /**
          * Configure Talon SRX Output and Sensor direction accordingly Invert Motor to
          * have green LEDs when driving Talon Forward / Requesting Positive Output Phase
          * sensor to have positive increment when driving Talon Forward (Green LED)
          */
-        masterTalon.setSensorPhase(false);
+        masterTalon.setEncoderInverted(false);
 
         /* Set relevant frame periods to be at least as fast as periodic rate */
-        masterTalon.setStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, 10, TIMEOUT_MS);
-        masterTalon.setStatusFramePeriod(StatusFrameEnhanced.Status_10_MotionMagic, 10, TIMEOUT_MS);
+        masterTalon.setStatusFramePeriod(10);
 
         /* Set the peak and nominal outputs */
-        masterTalon.configNominalOutputForward(0, TIMEOUT_MS);
-        masterTalon.configNominalOutputReverse(0, TIMEOUT_MS);
-        masterTalon.configPeakOutputForward(1, TIMEOUT_MS);
-        masterTalon.configPeakOutputReverse(-1, TIMEOUT_MS);
+        masterTalon.setOutputLimits(0, 0, 1, -1);
 
         /* Set Motion Magic gains in slot0 - see documentation */
-        masterTalon.selectProfileSlot(SLOT_IDX, PID_LOOP_IDX);
-        masterTalon.config_kF(SLOT_IDX, gains.F, TIMEOUT_MS);
-        masterTalon.config_kP(SLOT_IDX, gains.P, TIMEOUT_MS);
-        masterTalon.config_kI(SLOT_IDX, gains.I, TIMEOUT_MS);
-        masterTalon.config_kD(SLOT_IDX, gains.D, TIMEOUT_MS);
+        masterTalon.setPID(gains);
 
         /* Set acceleration and vcruise velocity - see documentation */
-        masterTalon.configMotionCruiseVelocity(15000, TIMEOUT_MS);
-        masterTalon.configMotionAcceleration(6000, TIMEOUT_MS);
+        masterTalon.setMotionSpeed(15000, 6000);
 
         /* Zero the sensor once on robot boot up */
-        masterTalon.setSelectedSensorPosition(0, PID_LOOP_IDX, TIMEOUT_MS);
+        masterTalon.setEncoderPosition(0);
     }
 
     /**
@@ -463,7 +350,7 @@ public class Robot extends TimedRobot {
             for (int i = 0; i < 4; i++) if (values[i] > max) {max = values[i]; maxn = i;}
             galacticSearch = GalacticSearchMode.values()[maxn];
             galacticSearchNext = 0;
-            SmartDashboard.putString("GalacticSearch", galacticSearchNames[maxn]);
+            SmartDashboard.putString("GalacticSearch", K.galacticSearchNames[maxn]);
         }
     }
 
@@ -476,7 +363,7 @@ public class Robot extends TimedRobot {
      *
      * <p>
      * You can add additional auto modes by adding additional comparisons to the
-     * STARTING_POSITION structure below with additional strings. If using the
+     * K.STARTING_POSITION structure below with additional strings. If using the
      * SendableChooser make sure to add them to the chooser code above as well.
      */
     @Override
@@ -484,7 +371,7 @@ public class Robot extends TimedRobot {
         autonInstructions.clear();
         resetEncoders();
         gyro.reset();
-        rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, ROTATIONAL_GAIN_CONSTRAINTS);
+        rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
         switch (selectedChallenge) {
             case GALACTIC_SEARCH:
@@ -545,7 +432,7 @@ public class Robot extends TimedRobot {
             case AUTONAV:
                 switch (selectedPath) {
                     case BARREL_RACING:
-                        autonInstructions.add(new MoveInch(135+ Robot.robotLength / 2));
+                        autonInstructions.add(new MoveInch(135+ K.robotLength / 2));
                         autonInstructions.add(new TurnDeg(-60)); // c6.5
                         autonInstructions.add(new MoveInch(-90));
                         autonInstructions.add(new TurnDeg(-60)); // e5
@@ -566,7 +453,7 @@ public class Robot extends TimedRobot {
                         autonInstructions.add(new MoveInch(270));
                         break;
                     case SLALOM:
-                        autonInstructions.add(new MoveInch(Robot.robotLength / 2));
+                        autonInstructions.add(new MoveInch(K.robotLength / 2));
                         autonInstructions.add(new TurnDeg(-45)); // e2
                         autonInstructions.add(new MoveInch(60 * Math.sqrt(2)));
                         autonInstructions.add(new TurnDeg(45)); // c4
@@ -585,25 +472,25 @@ public class Robot extends TimedRobot {
                         autonInstructions.add(new MoveInch(60 * Math.sqrt(2))); 
                         break;
                     case BOUNCE:
-                        autonInstructions.add(new MoveInch(30 + Robot.robotLength / 2));
+                        autonInstructions.add(new MoveInch(30 + K.robotLength / 2));
                         autonInstructions.add(new TurnDeg(-90)); // c3
-                        autonInstructions.add(new MoveInch(60 - Robot.robotLength / 2));
+                        autonInstructions.add(new MoveInch(60 - K.robotLength / 2));
                         //a3
-                        autonInstructions.add(new MoveInch(-60 + Robot.robotLength / 2)); 
+                        autonInstructions.add(new MoveInch(-60 + K.robotLength / 2)); 
                         autonInstructions.add(new TurnDeg(-45)); // c3
                         autonInstructions.add(new MoveInch(-60 * Math.sqrt(2)));
                         autonInstructions.add(new TurnDeg(90)); // e5
                         autonInstructions.add(new MoveInch(30 * Math.sqrt(2)));
                         autonInstructions.add(new TurnDeg(-45)); // d6
-                        autonInstructions.add(new MoveInch(90 - Robot.robotLength / 2));
+                        autonInstructions.add(new MoveInch(90 - K.robotLength / 2));
                         // a6
-                        autonInstructions.add(new MoveInch(-120 + Robot.robotLength / 2));
+                        autonInstructions.add(new MoveInch(-120 + K.robotLength / 2));
                         autonInstructions.add(new TurnDeg(90)); // e6
                         autonInstructions.add(new MoveInch(90));
                         autonInstructions.add(new TurnDeg(-90)); // e9
-                        autonInstructions.add(new MoveInch(120 - Robot.robotLength / 2));
+                        autonInstructions.add(new MoveInch(120 - K.robotLength / 2));
                         // a9
-                        autonInstructions.add(new MoveInch(-30 + Robot.robotLength / 2));
+                        autonInstructions.add(new MoveInch(-30 + K.robotLength / 2));
                         autonInstructions.add(new TurnDeg(-45)); // b9
                         autonInstructions.add(new MoveInch(-60));
                         break;
@@ -622,10 +509,10 @@ public class Robot extends TimedRobot {
         switch (selectedChallenge) {
             case GALACTIC_SEARCH:
                 handlePopper(true);
-                if (ballsStored < MAX_BALLS) {
-                    intake.set(ControlMode.PercentOutput, INTAKE_SPEED_IN);
+                if (ballsStored < K.MAX_BALLS) {
+                    intake.setSpeed(K.INTAKE_SPEED_IN);
                 } else {
-                    intake.set(ControlMode.PercentOutput, INTAKE_SPEED_OUT);
+                    intake.setSpeed(K.INTAKE_SPEED_OUT);
                 }
 
             case AUTONAV:
@@ -659,13 +546,13 @@ public class Robot extends TimedRobot {
         rightjoyY = xboxController.getRightY();
         leftjoyX = xboxController.getLeftX();
         rightjoyX = xboxController.getRightX();
-        arcadeButton = xboxController.getRawButton(L_STICK);
-        tankButton = xboxController.getRawButton(R_STICK);
-        drawbridgeButton = xboxController.getRawButton(A_BUTTON);
+        arcadeButton = xboxController.getRawButton(K.L_STICK);
+        tankButton = xboxController.getRawButton(K.R_STICK);
+        drawbridgeButton = xboxController.getRawButton(K.A_BUTTON);
         intakeInButton = 0.1 < xboxController.getLeftTriggerAxis();
         intakeOutButton = 0.1 < xboxController.getRightTriggerAxis();
-        popperInButton = xboxController.getRawButton(L_SHOULDER);
-        popperOutButton = xboxController.getRawButton(R_SHOULDER);
+        popperInButton = xboxController.getRawButton(K.L_SHOULDER);
+        popperOutButton = xboxController.getRawButton(K.R_SHOULDER);
         hangButton = false;
 
         setPistonExtended(drawbridgeSol, drawbridgeButton);
@@ -684,14 +571,14 @@ public class Robot extends TimedRobot {
         if (ArcadeDrive) {
             double x = rightjoyX;
             double y = leftjoyY;
-            leftMaster.set(ControlMode.PercentOutput, (y * (2 - Math.abs(x)) - x * (2 - Math.abs(y))) / 2);
-            rightMaster.set(ControlMode.PercentOutput, (y * (2 - Math.abs(x)) + x * (2 - Math.abs(y))) / 2);
+            leftMaster.setSpeed((y * (2 - Math.abs(x)) - x * (2 - Math.abs(y))) / 2);
+            rightMaster.setSpeed((y * (2 - Math.abs(x)) + x * (2 - Math.abs(y))) / 2);
         } else {
-            leftMaster.set(ControlMode.PercentOutput, leftjoyY);
-            rightMaster.set(ControlMode.PercentOutput, rightjoyY);
+            leftMaster.setSpeed(leftjoyY);
+            rightMaster.setSpeed(rightjoyY);
         }
 
-        if (intakeInButton && ballsStored >= MAX_BALLS) {
+        if (intakeInButton && ballsStored >= K.MAX_BALLS) {
             xboxController.setRumble(RumbleType.kLeftRumble, 1.0);
             xboxController.setRumble(RumbleType.kRightRumble, 1.0);
         } else {
@@ -701,19 +588,19 @@ public class Robot extends TimedRobot {
 
         // this code handles intake
         if (intakeInButton) {
-            intake.set(ControlMode.PercentOutput, INTAKE_SPEED_IN);
-        } else if (intakeOutButton || ballsStored >= MAX_BALLS) {
-            intake.set(ControlMode.PercentOutput, INTAKE_SPEED_OUT);
+            intake.setSpeed(K.INTAKE_SPEED_IN);
+        } else if (intakeOutButton || ballsStored >= K.MAX_BALLS) {
+            intake.setSpeed(K.INTAKE_SPEED_OUT);
         } else {
-            intake.set(ControlMode.PercentOutput, 0);
+            intake.setSpeed(0);
         }
 
         // this code handles the popper
         if (popperInButton) {
-            popper.set(ControlMode.PercentOutput, POPPER_SPEED_IN);
+            popper.setSpeed(K.POPPER_SPEED_IN);
             handlePopper(false);
         } else if (popperOutButton) {
-            popper.set(ControlMode.PercentOutput, POPPER_SPEED_OUT);
+            popper.setSpeed(K.POPPER_SPEED_OUT);
             handlePopper(false);
         } else {
             handlePopper(true);
@@ -734,8 +621,8 @@ public class Robot extends TimedRobot {
                 testDone = moveInches(testMoveDistance);
             }
         } else {
-            leftMaster.set(ControlMode.PercentOutput, 0);
-            rightMaster.set(ControlMode.PercentOutput, 0);
+            leftMaster.setSpeed(0);
+            rightMaster.setSpeed(0);
         }
     }
 
@@ -743,7 +630,7 @@ public class Robot extends TimedRobot {
         resetEncoders();
         gyro.reset();
         testDone = false;
-        rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, ROTATIONAL_GAIN_CONSTRAINTS);
+        rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
         initializeMotionMagicMaster(rightMaster);
         initializeMotionMagicMaster(leftMaster);
@@ -755,9 +642,10 @@ public class Robot extends TimedRobot {
      * @return true if successful and false if error
      */
     public boolean resetEncoders() {
-        ErrorCode rightError = rightMaster.setSelectedSensorPosition(0);
-        ErrorCode leftError = leftMaster.setSelectedSensorPosition(0);
-        return rightError.value == 0 && leftError.value == 0;
+        // TODO: Add error checking for new motor controller methods
+        /*ErrorCode rightError = */rightMaster.setEncoderPosition(0);
+        /*ErrorCode leftError = */leftMaster.setEncoderPosition(0);
+        return true; // return rightError.value == 0 && leftError.value == 0;
     }
 
     /**
@@ -769,23 +657,23 @@ public class Robot extends TimedRobot {
      */
     public boolean moveInches(double inches) {
         inches = -inches;
-        leftMaster.set(ControlMode.MotionMagic, inchesToTicks(inches));
-        rightMaster.set(ControlMode.MotionMagic, inchesToTicks(inches));
+        leftMaster.setDistance(inchesToTicks(inches));
+        rightMaster.setDistance(inchesToTicks(inches));
         System.out.println(
-            (Math.abs(leftMaster.getSelectedSensorPosition() - inchesToTicks(inches)) - inchesToTicks(distanceMarginOfError))
+            (Math.abs(leftMaster.getEncoderPosition() - inchesToTicks(inches)) - inchesToTicks(distanceMarginOfError))
             + " " + (Math.abs(leftMaster.getActiveTrajectoryVelocity()) < inchesToTicks(1) * 10)
-            + " " + (Math.abs(rightMaster.getSelectedSensorPosition() - inchesToTicks(inches)) - inchesToTicks(distanceMarginOfError))
+            + " " + (Math.abs(rightMaster.getEncoderPosition() - inchesToTicks(inches)) - inchesToTicks(distanceMarginOfError))
             + " " + (Math.abs(rightMaster.getActiveTrajectoryVelocity()) < inchesToTicks(1) * 10)
         );
         if (
-            Math.abs(leftMaster.getSelectedSensorPosition() - inchesToTicks(inches)) < inchesToTicks(distanceMarginOfError)
+            Math.abs(leftMaster.getEncoderPosition() - inchesToTicks(inches)) < inchesToTicks(distanceMarginOfError)
             && Math.abs(leftMaster.getActiveTrajectoryVelocity()) < inchesToTicks(1) * 10
-            && Math.abs(rightMaster.getSelectedSensorPosition() - inchesToTicks(inches)) < inchesToTicks(distanceMarginOfError)
+            && Math.abs(rightMaster.getEncoderPosition() - inchesToTicks(inches)) < inchesToTicks(distanceMarginOfError)
             && Math.abs(rightMaster.getActiveTrajectoryVelocity()) < inchesToTicks(1) * 10
         ) {
             System.out.println("done");
-            rightMaster.set(ControlMode.PercentOutput, 0);
-            leftMaster.set(ControlMode.PercentOutput, 0);
+            rightMaster.setSpeed(0);
+            leftMaster.setSpeed(0);
             return true;
         } else {
             return false;
@@ -800,7 +688,7 @@ public class Robot extends TimedRobot {
      * @return the number of encoder ticks equivalent to the input distance
      */
     double inchesToTicks(double inches) {
-        return encoderRotation * inches / circumference;
+        return K.encoderRotation * inches / circumference;
     }
 
     /**
@@ -837,15 +725,15 @@ public class Robot extends TimedRobot {
         // }
         if (
             Math.abs(gyro.getAngle() - degrees) < angleMarginOfError
-            && Math.abs(rightMaster.getSelectedSensorVelocity()) < 1024 / 4
-            && Math.abs(leftMaster.getSelectedSensorVelocity()) < 1024 / 4
+            && Math.abs(rightMaster.getSensorVelocity()) < 1024 / 4
+            && Math.abs(leftMaster.getSensorVelocity()) < 1024 / 4
         ) {
-            rightMaster.set(ControlMode.PercentOutput, 0);
-            leftMaster.set(ControlMode.PercentOutput, 0);
+            rightMaster.setSpeed(0);
+            leftMaster.setSpeed(0);
             return true;
         } else {
-            rightMaster.set(ControlMode.PercentOutput, output);
-            leftMaster.set(ControlMode.PercentOutput, -output);
+            rightMaster.setSpeed(output);
+            leftMaster.setSpeed(-output);
             return false;
         }
     }
@@ -874,11 +762,11 @@ public class Robot extends TimedRobot {
     // this code is called from auton and teleop periodic and uses sensors to automatically handle the popper
     void handlePopper(boolean shouldSetPopper) {
         // if a ball is ready to be popped
-        if (!INTAKE_SENSOR.get()) {
-            popperInTime = POPPER_TIME_IN;
+        if (!K.INTAKE_SENSOR.get()) {
+            popperInTime = K.POPPER_TIME_IN;
             intakeTime++;
         } else {
-            if (intakeTime > INTAKE_COUNTER_COUNT_TIME) {
+            if (intakeTime > K.INTAKE_COUNTER_COUNT_TIME) {
                 System.out.println("ball incoming");
                 //ballsStored++;
                 System.out.println("ballsStored: " + ballsStored);
@@ -889,11 +777,11 @@ public class Robot extends TimedRobot {
         }
 
         // if there is a ball at the top of the popper
-        if (!POPPER_SENSOR.get()) {
-            if (++popperCounterTime > POPPER_COUNTER_JAM_TIME) {
+        if (!K.POPPER_SENSOR.get()) {
+            if (++popperCounterTime > K.POPPER_COUNTER_JAM_TIME) {
                 System.out.println("popper jammed");
-                popperInTime = POPPER_TIME_IN;
-                popperOutTime = POPPER_TIME_OUT;
+                popperInTime = K.POPPER_TIME_IN;
+                popperOutTime = K.POPPER_TIME_OUT;
             }
         } else {
             popperCounterTime = 0;
@@ -901,11 +789,11 @@ public class Robot extends TimedRobot {
 
         if (shouldSetPopper) {
             if (popperOutTime-- > 0) {
-                popper.set(ControlMode.PercentOutput, POPPER_SPEED_OUT);
+                popper.setSpeed(K.POPPER_SPEED_OUT);
             } else if (popperInTime-- > 0) {
-                popper.set(ControlMode.PercentOutput, POPPER_SPEED_IN);
+                popper.setSpeed(K.POPPER_SPEED_IN);
             } else {
-                popper.set(ControlMode.PercentOutput, 0);
+                popper.setSpeed(0);
             }
         }
 
