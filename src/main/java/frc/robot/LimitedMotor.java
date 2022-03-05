@@ -6,8 +6,6 @@ class LimitedMotor {
     private CANSparkMax spark;
     // the encoder that belongs to the above spark
     private RelativeEncoder encoder;
-    // controls the spark
-    private SparkMaxPIDController pidController;
 
     // the position of the encoder in rotations when it hits the reverse limit switch.
     private double start;
@@ -36,7 +34,6 @@ class LimitedMotor {
         this.safeSpeed = safeSpeed;
         // 4096 is the ticks per revolution of the encoder
         this.encoder = spark.getEncoder(SparkMaxRelativeEncoder.Type.kQuadrature, 4096);
-        this.pidController = spark.getPIDController();
     }
 
     /**
