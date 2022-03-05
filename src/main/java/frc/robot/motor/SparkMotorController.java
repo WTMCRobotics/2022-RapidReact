@@ -9,7 +9,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMaxLowLevel.PeriodicFrame;
 
 public class SparkMotorController implements IMotorController {
-    CANSparkMax controller;
+    public CANSparkMax controller;
     RelativeEncoder encoder;
     SparkMaxPIDController pid;
 

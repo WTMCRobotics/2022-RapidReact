@@ -40,6 +40,21 @@ class LimitedMotor {
     }
 
     /**
+     * Creates a new limited motor
+     * 
+     * @param spark the motor to be limited
+     * @param range the distance in rotations from the forward to the reverse limit switch
+     * @param safeSpeed the maximum speed, in RPM, at which it is safe to run into the limit switch
+     */
+    public LimitedMotor(IMotorController motorController, double range, double safeSpeed) {
+        if (!(motorController instanceof SparkMotorController)) {
+            throw new IllegalArgumentException("Limited motor must be a spark motor controller");
+        }
+        CANSparkMax spark = ((SparkMotorController)motorController).controller;
+        LimitedMotor(spark, range, safeSpeed);
+    }
+
+    /**
      * this method should be called in robot periodic
      * moves the motor closer to the target position
      */
