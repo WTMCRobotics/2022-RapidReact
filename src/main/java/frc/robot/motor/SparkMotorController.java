@@ -4,16 +4,20 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxRelativeEncoder;
+import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMaxLowLevel.PeriodicFrame;
 
-public class SparkMotorController implements IMotorController {
+import frc.robot.Robot;
+
+public class SparkMotorController implements MotorController {
     public CANSparkMax controller;
     RelativeEncoder encoder;
     SparkMaxPIDController pid;
+    Robot robot;
 
-    SparkMotorController(int canID) {
+    SparkMotorController(int canID, Robot robot) {
         controller = new CANSparkMax(canID, MotorType.kBrushed);
         encoder = controller.getEncoder(SparkMaxRelativeEncoder.Type.kQuadrature, 4096); // 4096 = number of ticks per revolution
         pid = controller.getPIDController();
@@ -25,13 +29,18 @@ public class SparkMotorController implements IMotorController {
     }
 
     @Override
-    public void setSpeed(double speed) {
+    public void setPercentOutput(double speed) {
         controller.set(speed);
     }
 
     @Override
+    public void setVelocity(double speed) {
+        pid.setReference(speed, CANSparkMax.ControlType.kSmartVelocity);
+    }
+
+    @Override
     public void setDistance(double inches) {
-        // TODO: implement this
+        pid.setReference(inches / robot.circumference, ControlType.kSmartMotion);
     }
 
     @Override
@@ -45,7 +54,7 @@ public class SparkMotorController implements IMotorController {
     }
 
     @Override
-    public void follow(IMotorController leader) {
+    public void follow(MotorController leader) {
         if (!(leader instanceof SparkMotorController))
             throw new IllegalArgumentException("Leader must be the same type of motor controller as the follower");
         controller.follow(((SparkMotorController)leader).controller);

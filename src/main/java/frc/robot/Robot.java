@@ -63,13 +63,13 @@ public class Robot extends TimedRobot {
     ArrayList<Instruction> autonInstructions = new ArrayList<Instruction>();
 
     // creates objects for the talons
-    public IMotorController leftMaster = MotorControllerFactory.create(this, K.LEFT_MASTER_ID, K.LEFT_MASTER_TYPE);
-    IMotorController leftSlave = MotorControllerFactory.create(this, K.LEFT_SLAVE_ID, K.LEFT_SLAVE_TYPE);
-    public IMotorController rightMaster = MotorControllerFactory.create(this, K.RIGHT_MASTER_ID, K.RIGHT_MASTER_TYPE);
-    IMotorController rightSlave = MotorControllerFactory.create(this, K.RIGHT_SLAVE_ID, K.RIGHT_SLAVE_TYPE);
-    IMotorController hangMotor = MotorControllerFactory.create(this, K.WINCH_MOTOR_ID, K.WINCH_MOTOR_TYPE);
-    IMotorController intake = MotorControllerFactory.create(this, K.INTAKE_ID, K.INTAKE_TYPE);
-    IMotorController popper = MotorControllerFactory.create(this, K.POPPER_ID, K.POPPER_TYPE);
+    public MotorController leftMaster = MotorControllerFactory.create(this, K.LEFT_MASTER_ID, K.LEFT_MASTER_TYPE);
+    MotorController leftSlave = MotorControllerFactory.create(this, K.LEFT_SLAVE_ID, K.LEFT_SLAVE_TYPE);
+    public MotorController rightMaster = MotorControllerFactory.create(this, K.RIGHT_MASTER_ID, K.RIGHT_MASTER_TYPE);
+    MotorController rightSlave = MotorControllerFactory.create(this, K.RIGHT_SLAVE_ID, K.RIGHT_SLAVE_TYPE);
+    MotorController hangMotor = MotorControllerFactory.create(this, K.WINCH_MOTOR_ID, K.WINCH_MOTOR_TYPE);
+    MotorController intake = MotorControllerFactory.create(this, K.INTAKE_ID, K.INTAKE_TYPE);
+    MotorController popper = MotorControllerFactory.create(this, K.POPPER_ID, K.POPPER_TYPE);
 
     // ##########################################
     // drivetrain and pid related constants and variables
@@ -211,9 +211,9 @@ public class Robot extends TimedRobot {
         pixy.init();
     }
 
-    public void initializeMotor(IMotorController talon, boolean neutralMode, boolean inverted) {
+    public void initializeMotor(MotorController talon, boolean neutralMode, boolean inverted) {
         /* Ensure motor output is neutral during init */
-        talon.setSpeed(0);
+        talon.setPercentOutput(0);
 
         /* Factory Default all hardware to prevent unexpected behavior */
         talon.reset();
@@ -225,7 +225,7 @@ public class Robot extends TimedRobot {
         talon.setInverted(inverted);
     }
 
-    public void initializeMotionMagicMaster(IMotorController masterTalon) {
+    public void initializeMotionMagicMaster(MotorController masterTalon) {
         /* Factory default hardware to prevent unexpected behavior */
         masterTalon.reset();
 
@@ -510,9 +510,9 @@ public class Robot extends TimedRobot {
             case GALACTIC_SEARCH:
                 handlePopper(true);
                 if (ballsStored < K.MAX_BALLS) {
-                    intake.setSpeed(K.INTAKE_SPEED_IN);
+                    intake.setPercentOutput(K.INTAKE_SPEED_IN);
                 } else {
-                    intake.setSpeed(K.INTAKE_SPEED_OUT);
+                    intake.setPercentOutput(K.INTAKE_SPEED_OUT);
                 }
 
             case AUTONAV:
@@ -571,11 +571,11 @@ public class Robot extends TimedRobot {
         if (ArcadeDrive) {
             double x = rightjoyX;
             double y = leftjoyY;
-            leftMaster.setSpeed((y * (2 - Math.abs(x)) - x * (2 - Math.abs(y))) / 2);
-            rightMaster.setSpeed((y * (2 - Math.abs(x)) + x * (2 - Math.abs(y))) / 2);
+            leftMaster.setPercentOutput((y * (2 - Math.abs(x)) - x * (2 - Math.abs(y))) / 2);
+            rightMaster.setPercentOutput((y * (2 - Math.abs(x)) + x * (2 - Math.abs(y))) / 2);
         } else {
-            leftMaster.setSpeed(leftjoyY);
-            rightMaster.setSpeed(rightjoyY);
+            leftMaster.setPercentOutput(leftjoyY);
+            rightMaster.setPercentOutput(rightjoyY);
         }
 
         if (intakeInButton && ballsStored >= K.MAX_BALLS) {
@@ -588,19 +588,19 @@ public class Robot extends TimedRobot {
 
         // this code handles intake
         if (intakeInButton) {
-            intake.setSpeed(K.INTAKE_SPEED_IN);
+            intake.setPercentOutput(K.INTAKE_SPEED_IN);
         } else if (intakeOutButton || ballsStored >= K.MAX_BALLS) {
-            intake.setSpeed(K.INTAKE_SPEED_OUT);
+            intake.setPercentOutput(K.INTAKE_SPEED_OUT);
         } else {
-            intake.setSpeed(0);
+            intake.setPercentOutput(0);
         }
 
         // this code handles the popper
         if (popperInButton) {
-            popper.setSpeed(K.POPPER_SPEED_IN);
+            popper.setPercentOutput(K.POPPER_SPEED_IN);
             handlePopper(false);
         } else if (popperOutButton) {
-            popper.setSpeed(K.POPPER_SPEED_OUT);
+            popper.setPercentOutput(K.POPPER_SPEED_OUT);
             handlePopper(false);
         } else {
             handlePopper(true);
@@ -621,8 +621,8 @@ public class Robot extends TimedRobot {
                 testDone = moveInches(testMoveDistance);
             }
         } else {
-            leftMaster.setSpeed(0);
-            rightMaster.setSpeed(0);
+            leftMaster.setPercentOutput(0);
+            rightMaster.setPercentOutput(0);
         }
     }
 
@@ -657,23 +657,23 @@ public class Robot extends TimedRobot {
      */
     public boolean moveInches(double inches) {
         inches = -inches;
-        leftMaster.setDistance(inchesToTicks(inches));
-        rightMaster.setDistance(inchesToTicks(inches));
+        leftMaster.setDistance(inches);
+        rightMaster.setDistance(inches);
         System.out.println(
-            (Math.abs(leftMaster.getEncoderPosition() - inchesToTicks(inches)) - inchesToTicks(distanceMarginOfError))
-            + " " + (Math.abs(leftMaster.getActiveTrajectoryVelocity()) < inchesToTicks(1) * 10)
-            + " " + (Math.abs(rightMaster.getEncoderPosition() - inchesToTicks(inches)) - inchesToTicks(distanceMarginOfError))
-            + " " + (Math.abs(rightMaster.getActiveTrajectoryVelocity()) < inchesToTicks(1) * 10)
+            (Math.abs(leftMaster.getEncoderPosition() - (inches / circumference)) - distanceMarginOfError)
+            + " " + (Math.abs(leftMaster.getActiveTrajectoryVelocity()) < (1.0 / circumference) * 10)
+            + " " + (Math.abs(rightMaster.getEncoderPosition() - (inches / circumference)) - distanceMarginOfError)
+            + " " + (Math.abs(rightMaster.getActiveTrajectoryVelocity()) < (1.0 / circumference) * 10)
         );
         if (
-            Math.abs(leftMaster.getEncoderPosition() - inchesToTicks(inches)) < inchesToTicks(distanceMarginOfError)
-            && Math.abs(leftMaster.getActiveTrajectoryVelocity()) < inchesToTicks(1) * 10
-            && Math.abs(rightMaster.getEncoderPosition() - inchesToTicks(inches)) < inchesToTicks(distanceMarginOfError)
-            && Math.abs(rightMaster.getActiveTrajectoryVelocity()) < inchesToTicks(1) * 10
+            Math.abs(leftMaster.getEncoderPosition() - (inches / circumference)) < distanceMarginOfError
+            && Math.abs(leftMaster.getActiveTrajectoryVelocity()) < (1.0 / circumference) * 10
+            && Math.abs(rightMaster.getEncoderPosition() - (inches / circumference)) < distanceMarginOfError
+            && Math.abs(rightMaster.getActiveTrajectoryVelocity()) < (1.0 / circumference) * 10
         ) {
             System.out.println("done");
-            rightMaster.setSpeed(0);
-            leftMaster.setSpeed(0);
+            rightMaster.setPercentOutput(0);
+            leftMaster.setPercentOutput(0);
             return true;
         } else {
             return false;
@@ -681,18 +681,7 @@ public class Robot extends TimedRobot {
     }
 
     /**
-     * converts inches to the value needed by the talon encoder for motion magic
-     * 
-     * @param inches a distance measured in inches
-     * 
-     * @return the number of encoder ticks equivalent to the input distance
-     */
-    double inchesToTicks(double inches) {
-        return K.encoderRotation * inches / circumference;
-    }
-
-    /**
-     * Turns robot a number of degrees. Should be called every tick until it returns true.
+     * Turns robot a number of radians. Should be called every tick until it returns true.
      * 
      * @param radians the number of radians to turn
      * 
@@ -728,12 +717,12 @@ public class Robot extends TimedRobot {
             && Math.abs(rightMaster.getSensorVelocity()) < 1024 / 4
             && Math.abs(leftMaster.getSensorVelocity()) < 1024 / 4
         ) {
-            rightMaster.setSpeed(0);
-            leftMaster.setSpeed(0);
+            rightMaster.setPercentOutput(0);
+            leftMaster.setPercentOutput(0);
             return true;
         } else {
-            rightMaster.setSpeed(output);
-            leftMaster.setSpeed(-output);
+            rightMaster.setPercentOutput(output);
+            leftMaster.setPercentOutput(-output);
             return false;
         }
     }
@@ -789,11 +778,11 @@ public class Robot extends TimedRobot {
 
         if (shouldSetPopper) {
             if (popperOutTime-- > 0) {
-                popper.setSpeed(K.POPPER_SPEED_OUT);
+                popper.setPercentOutput(K.POPPER_SPEED_OUT);
             } else if (popperInTime-- > 0) {
-                popper.setSpeed(K.POPPER_SPEED_IN);
+                popper.setPercentOutput(K.POPPER_SPEED_IN);
             } else {
-                popper.setSpeed(0);
+                popper.setPercentOutput(0);
             }
         }
 

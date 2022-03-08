@@ -1,11 +1,19 @@
+package frc.robot;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkMaxRelativeEncoder;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkMaxPIDController;
+
+import frc.robot.motor.*;
 
 class LimitedMotor {
     // the motor being limited
     private CANSparkMax spark;
     // the encoder that belongs to the above spark
     private RelativeEncoder encoder;
+    // PID controller for the spark
+    private SparkMaxPIDController pid;
 
     // the position of the encoder in rotations when it hits the reverse limit switch.
     private double start;
@@ -33,7 +41,8 @@ class LimitedMotor {
         this.range = range;
         this.safeSpeed = safeSpeed;
         // 4096 is the ticks per revolution of the encoder
-        this.encoder = spark.getEncoder(SparkMaxRelativeEncoder.Type.kQuadrature, 4096);
+        this.encoder = spark.getEncoder(SparkMaxRelativeEncoder.Type.kQuadrature, K.encoderRotation);
+        this.pid = spark.getPIDController();
     }
 
     /**
@@ -43,12 +52,8 @@ class LimitedMotor {
      * @param range the distance in rotations from the forward to the reverse limit switch
      * @param safeSpeed the maximum speed, in RPM, at which it is safe to run into the limit switch
      */
-    public LimitedMotor(IMotorController motorController, double range, double safeSpeed) {
-        if (!(motorController instanceof SparkMotorController)) {
-            throw new IllegalArgumentException("Limited motor must be a spark motor controller");
-        }
-        CANSparkMax spark = ((SparkMotorController)motorController).controller;
-        LimitedMotor(spark, range, safeSpeed);
+    public LimitedMotor(MotorController motorController, double range, double safeSpeed) {
+        this(checkSpark(motorController), range, safeSpeed);
     }
 
     /**
@@ -56,13 +61,12 @@ class LimitedMotor {
      * moves the motor closer to the target position
      */
     public void tick() {
-        
         if (!this.startIsKnown){
-            this.spark.setReference(this.safeSpeed * -1, CANSparkMax.ControlType.kSmartVelocity);
+            this.pid.setReference(this.safeSpeed * -1, CANSparkMax.ControlType.kSmartVelocity);
             this.start = this.encoder.getPosition(); // This is in rotations, but that can be changed.
             this.startIsKnown = true;
         } else {
-            this.spark.setReference(this.start + (this.range) * this.targetPos, CANSparkMax.ControlType.kSmartMotion);
+            this.pid.setReference(this.start + (this.range) * this.targetPos, CANSparkMax.ControlType.kSmartMotion);
         }
     }
 
@@ -86,5 +90,19 @@ class LimitedMotor {
         } else {
             this.targetPos = targetPos;
         }
+    }
+
+    /**
+     * Check that a motor controller is a Spark, and return the controller inside.
+     * This is necessary because you cannot call this code in a chained constructor.
+     * @param motorController The controller to check
+     * @return The CANSparkMax instance for the controller
+     * @throws IllegalArgumentException If the motor is not a Spark.
+     */
+    private static CANSparkMax checkSpark(MotorController motorController) {
+        if (!(motorController instanceof SparkMotorController)) {
+            throw new IllegalArgumentException("Limited motor must be a spark motor controller");
+        }
+        return ((SparkMotorController)motorController).controller;
     }
 }

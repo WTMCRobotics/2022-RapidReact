@@ -9,7 +9,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import frc.robot.K;
 import frc.robot.Robot;
 
-public class TalonMotorController implements IMotorController {
+public class TalonMotorController implements MotorController {
     Robot robot;
     TalonSRX controller;
 
@@ -24,8 +24,15 @@ public class TalonMotorController implements IMotorController {
     }
 
     @Override
-    public void setSpeed(double speed) {
+    public void setPercentOutput(double speed) {
         controller.set(ControlMode.PercentOutput, speed);
+    }
+
+    @Override
+    public void setVelocity(double speed) {
+        // convert from RPM to ticks/100 ms
+        // 600 * (100 ms) = 1 minute
+        controller.set(ControlMode.Velocity, speed * K.encoderRotation / 600);
     }
 
     @Override
@@ -44,7 +51,7 @@ public class TalonMotorController implements IMotorController {
     }
 
     @Override
-    public void follow(IMotorController leader) {
+    public void follow(MotorController leader) {
         if (!(leader instanceof TalonMotorController))
             throw new IllegalArgumentException("Leader must be the same type of motor controller as the follower");
         controller.follow(((TalonMotorController)leader).controller);
@@ -90,12 +97,12 @@ public class TalonMotorController implements IMotorController {
 
     @Override
     public double getActiveTrajectoryVelocity() {
-        return controller.getActiveTrajectoryVelocity();
+        return controller.getActiveTrajectoryVelocity() / K.encoderRotation;
     }
 
     @Override
     public double getSensorVelocity() {
-        return controller.getSelectedSensorVelocity();
+        return controller.getSelectedSensorVelocity() / K.encoderRotation;
     }
 
     @Override
@@ -106,12 +113,12 @@ public class TalonMotorController implements IMotorController {
 
     @Override
     public double getEncoderPosition() {
-        return controller.getSelectedSensorPosition();
+        return controller.getSelectedSensorPosition() / K.encoderRotation;
     }
 
     @Override
     public void setEncoderPosition(double position) {
-        controller.setSelectedSensorPosition(position);
+        controller.setSelectedSensorPosition(position * K.encoderRotation);
     }
     
 }

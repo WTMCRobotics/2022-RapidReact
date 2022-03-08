@@ -14,8 +14,8 @@ public class StartPushing extends Instruction {
     @Override
     public boolean doit(Robot robot) {
         System.out.println("pushing");
-        robot.rightMaster.setSpeed(-0.2);
-        robot.leftMaster.setSpeed(-0.2);
+        robot.rightMaster.setPercentOutput(-0.2);
+        robot.leftMaster.setPercentOutput(-0.2);
         return true;
     }
 

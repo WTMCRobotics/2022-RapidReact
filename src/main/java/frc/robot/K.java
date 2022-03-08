@@ -1,7 +1,7 @@
 package frc.robot;
 
-import frc.robot.motor.IMotorController;
-import frc.robot.motor.IMotorController.Type;
+import frc.robot.motor.MotorController;
+import frc.robot.motor.MotorController.Type;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.DigitalInput;
 
@@ -36,7 +36,7 @@ public final class K {
 
     // Binary Sensors
 
-    /** this should be pulled low on the 2016 Practice Robot */
+    /** this should be pulled low on the 2020 Practice Robot */
     public static final DigitalInput ROBOT_SENSOR = new DigitalInput(ROBOT_SENSOR_ID);
     /** sensor for when the winch is extended */ 
     public static final DigitalInput HANG_SET_SENSOR = new DigitalInput(HANG_SET_SENSOR_ID);
@@ -52,20 +52,20 @@ public final class K {
     // ##########################################
 
     // can bus IDs. Can be found in Phoenix Tuner
-    public static final int LEFT_MASTER_ID = 9;
-    public static final IMotorController.Type LEFT_MASTER_TYPE = Type.Talon;
-    public static final int LEFT_SLAVE_ID = 10;
-    public static final IMotorController.Type LEFT_SLAVE_TYPE = Type.Talon;
+    public static final int LEFT_MASTER_ID = 3;
+    public static final MotorController.Type LEFT_MASTER_TYPE = Type.SparkMax;
+    public static final int LEFT_SLAVE_ID = 4;
+    public static final MotorController.Type LEFT_SLAVE_TYPE = Type.SparkMax;
     public static final int RIGHT_MASTER_ID = 11;
-    public static final IMotorController.Type RIGHT_MASTER_TYPE = Type.Talon;
+    public static final MotorController.Type RIGHT_MASTER_TYPE = Type.Talon;
     public static final int RIGHT_SLAVE_ID = 12;
-    public static final IMotorController.Type RIGHT_SLAVE_TYPE = Type.Talon;
+    public static final MotorController.Type RIGHT_SLAVE_TYPE = Type.Talon;
     public static final int WINCH_MOTOR_ID = 15;
-    public static final IMotorController.Type WINCH_MOTOR_TYPE = Type.Talon;
+    public static final MotorController.Type WINCH_MOTOR_TYPE = Type.Talon;
     public static final int INTAKE_ID = 14;
-    public static final IMotorController.Type INTAKE_TYPE = Type.Talon;
+    public static final MotorController.Type INTAKE_TYPE = Type.Talon;
     public static final int POPPER_ID = 13;
-    public static final IMotorController.Type POPPER_TYPE = Type.Talon;
+    public static final MotorController.Type POPPER_TYPE = Type.Talon;
 
     /** the number of ticks in a full rotation */
     public static final int encoderRotation = 4096;

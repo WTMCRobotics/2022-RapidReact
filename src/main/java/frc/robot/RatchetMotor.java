@@ -1,16 +1,16 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.DigitalInput;
-import frc.robot.motor.IMotorController;
+import frc.robot.motor.MotorController;
 
 public class RatchetMotor extends TwoStateMotor {
 
     int backwardTime = 0;
 
-    RatchetMotor(double speed, IMotorController motor, DigitalInput defaultSensor, DigitalInput setSensor) {
+    RatchetMotor(double speed, MotorController motor, DigitalInput defaultSensor, DigitalInput setSensor) {
         super(speed, motor, defaultSensor, setSensor);
     }
-    RatchetMotor(double speed, double speedOffset, IMotorController motor, DigitalInput defaultSensor, DigitalInput setSensor) {
+    RatchetMotor(double speed, double speedOffset, MotorController motor, DigitalInput defaultSensor, DigitalInput setSensor) {
         super(speed, speedOffset, motor, defaultSensor, setSensor);
     }
 
@@ -21,12 +21,12 @@ public class RatchetMotor extends TwoStateMotor {
         isDefault = defaultSensor.get();
         isSet = setSensor.get();
         if(--backwardTime > 0){
-            motor.setSpeed(((direction * speed ) + speedOffset) * -1);
+            motor.setPercentOutput(((direction * speed ) + speedOffset) * -1);
         } else if (isSet && direction == 1 || isDefault && direction == -1) {
-            motor.setSpeed((direction * speed) + speedOffset);
+            motor.setPercentOutput((direction * speed) + speedOffset);
             //System.out.println("moving at "+ ((direction * speed) + speedOffset));
         } else {
-            motor.setSpeed(0);
+            motor.setPercentOutput(0);
             //System.out.println("stopped");
         }
     }
