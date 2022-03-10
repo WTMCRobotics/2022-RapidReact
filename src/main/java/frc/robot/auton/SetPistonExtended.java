@@ -19,7 +19,7 @@ public class SetPistonExtended extends Instruction {
 	@Override
 	public boolean doit(Robot robot) {
 		System.out.println("extending: " + solenoid);
-		robot.setPistonExtended(solenoid, value);
+		//robot.setPistonExtended(solenoid, value);
 		return true;
 	}
 
