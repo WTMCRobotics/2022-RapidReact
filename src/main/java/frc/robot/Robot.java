@@ -10,20 +10,14 @@ package frc.robot;
 import frc.robot.motor.*;
 
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 
 import com.kauailabs.navx.frc.AHRS;
 
-import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.SPI.Port;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -48,16 +42,6 @@ public class Robot extends TimedRobot {
     // ##########################################
     // auton related constants and variables
     // ##########################################
-
-    /** dropdown for choosing which challenge */
-    private final SendableChooser<Challenge> CHALLENGE_CHOOSER = new SendableChooser<>();
-    /** the challenge selected by the user */
-    private Challenge selectedChallenge;
-
-    /** dropdown for choosing which path */
-    private final SendableChooser<Path> PATH_CHOOSER = new SendableChooser<>();
-    /** the path selected by the user */
-    private Path selectedPath;
 
     /** a list of instructions to follow */
     ArrayList<Instruction> autonInstructions = new ArrayList<Instruction>();
@@ -142,19 +126,7 @@ public class Robot extends TimedRobot {
     boolean popperInButton; // true if the button that runs the popper is pressed
     boolean popperOutButton; // true if the button that reverses the popper is pressed
 
-    // ##########################################
-    // Pneumatics related variables
-    // ##########################################
-
-    Compressor compressor = null;
-
-    DoubleSolenoid drawbridgeSol = new DoubleSolenoid(1, PneumaticsModuleType.CTREPCM, K.PCM_DRAWBRIDGE_IN, K.PCM_DRAWBRIDGE_OUT);
-    Solenoid hangSol = new Solenoid(1, PneumaticsModuleType.CTREPCM, K.PCM_RATCHET);
-
     Pixy2 pixy;
-    GalacticSearchMode galacticSearch;
-    GalacticSearchMode[] galacticSearchResults = new GalacticSearchMode[20];
-    int galacticSearchNext = 0;
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -164,31 +136,11 @@ public class Robot extends TimedRobot {
     public void robotInit() {
         System.out.println("starting robotInit()");
 
-        compressor = new Compressor(1, PneumaticsModuleType.CTREPCM);
-
-        CHALLENGE_CHOOSER.addOption("Galactic Search", Challenge.GALACTIC_SEARCH);
-        CHALLENGE_CHOOSER.addOption("AutoNav", Challenge.AUTONAV);
-
-        SmartDashboard.putData("Challenge", CHALLENGE_CHOOSER);
-
-        PATH_CHOOSER.addOption("Barrel Racing", Path.BARREL_RACING);
-        PATH_CHOOSER.addOption("Bounce", Path.BOUNCE);
-        PATH_CHOOSER.addOption("Slalom", Path.SLALOM);
-
-        SmartDashboard.putData("Path", PATH_CHOOSER);
-
         isPracticeRobot = !K.ROBOT_SENSOR.get();
-        if (isPracticeRobot) {
-            circumference = 6 * Math.PI;
-            gains = K.PRACTICE_ROBOT_GAINS;
-            rotationGains = K.PRACTICE_ROTATION_GAINS;
-            System.out.println("using 6 inch wheels");
-        } else {
-            circumference = 8 * Math.PI;
-            gains = K.COMPETITION_ROBOT_GAINS;
-            rotationGains = K.COMPETITION_ROTATION_GAINS;
-            System.out.println("using 8 inch wheels");
-        }
+        circumference = 8 * Math.PI;
+        gains = K.COMPETITION_ROBOT_GAINS;
+        rotationGains = K.COMPETITION_ROTATION_GAINS;
+        System.out.println("using 8 inch wheels");
 
         rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
@@ -303,27 +255,7 @@ public class Robot extends TimedRobot {
         testMoveDistance = SmartDashboard.getNumber("moveDistance", testMoveDistance);
         testTurnAmount = SmartDashboard.getNumber("turnAmount", testTurnAmount);
 
-        try {
-            selectedChallenge = CHALLENGE_CHOOSER.getSelected();
-            if (selectedChallenge == null) {
-                throw new NullPointerException("selectedChallenge can't be null");
-            }
-            if (selectedChallenge == Challenge.AUTONAV) {
-                selectedPath = PATH_CHOOSER.getSelected();
-                if (selectedPath == null) {
-                    throw new NullPointerException("selectedPath can't be null");
-                }
-            }
-            pixy.setLamp(selectedChallenge == Challenge.GALACTIC_SEARCH ? (byte)1 : (byte)0, (byte)0);
-
-            // this line will run only if the other lines didn't crash
-            SmartDashboard.putBoolean("Ready", true);
-        } catch (NullPointerException e) {
-            DriverStation.reportError("auton path not configured!", true);
-            SmartDashboard.putBoolean("Ready", false);
-        }
-
-        Pixy2CCC ccc = pixy.getCCC();
+        /*Pixy2CCC ccc = pixy.getCCC();
         ccc.getBlocks();
         ArrayList<Pixy2CCC.Block> blocks = ccc.getBlockCache();
         GalacticSearchMode mode;
@@ -351,7 +283,7 @@ public class Robot extends TimedRobot {
             galacticSearch = GalacticSearchMode.values()[maxn];
             galacticSearchNext = 0;
             SmartDashboard.putString("GalacticSearch", K.galacticSearchNames[maxn]);
-        }
+        }*/
     }
 
     /**
@@ -373,132 +305,7 @@ public class Robot extends TimedRobot {
         gyro.reset();
         rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
-        switch (selectedChallenge) {
-            case GALACTIC_SEARCH:
-                switch (galacticSearch) {
-                case BlueA:
-                    // Blue A: (B1)
-                    autonInstructions.add(new TurnDeg(30.964)); // - Turn 30.964 deg
-                    autonInstructions.add(new MoveInch(14.577 * 12)); // - Move 14.577 ft
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(-102.529)); // - Turn -102.529 deg
-                    autonInstructions.add(new MoveInch(7.906 * 12)); // - Move 7.906 ft
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(135)); // - Turn 135 deg
-                    autonInstructions.add(new MoveInch(12 * 12)); // - Move >11.180 ft (collect 1)
-                    break;
-                case BlueB:
-                    // Blue B: (D1)
-                    autonInstructions.add(new MoveInch(12.5 * 12));
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(45));
-                    autonInstructions.add(new MoveInch(7.071 * 12));
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(90));
-                    autonInstructions.add(new MoveInch(7.071 * 12));
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(-45));
-                    autonInstructions.add(new MoveInch(5 * 12));
-                    break;
-                case RedA:
-                    // Red A: (B1)
-                    autonInstructions.add(new TurnDeg(26.565));
-                    autonInstructions.add(new MoveInch(11.180 * 12));//(collect 1)
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(-81.870));
-                    autonInstructions.add(new MoveInch(7.906 * 12));
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(71.565));
-                    autonInstructions.add(new MoveInch(15 * 12));
-                    break;
-                case RedB:
-                    // Red B: (B1)
-                    autonInstructions.add(new MoveInch(5 * 12));
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(45));
-                    autonInstructions.add(new MoveInch(7.071 * 12));
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(-90));
-                    autonInstructions.add(new MoveInch(7.071 * 12));
-                    // - Collect 1
-                    autonInstructions.add(new TurnDeg(45));
-                    autonInstructions.add(new MoveInch(12.5 * 12));
-                    break;
-                default:
-                    throw new Error("invalid value of \"galacticSearch\"");
-                }
-                
-                break;
-            case AUTONAV:
-                switch (selectedPath) {
-                    case BARREL_RACING:
-                        autonInstructions.add(new MoveInch(135+ K.robotLength / 2));
-                        autonInstructions.add(new TurnDeg(-60)); // c6.5
-                        autonInstructions.add(new MoveInch(-90));
-                        autonInstructions.add(new TurnDeg(-60)); // e5
-                        autonInstructions.add(new MoveInch(90));
-                        autonInstructions.add(new TurnDeg(-60)); // c3.5
-                        autonInstructions.add(new MoveInch(-165));
-                        autonInstructions.add(new TurnDeg(90)); // c9
-                        autonInstructions.add(new MoveInch(60));
-                        autonInstructions.add(new TurnDeg(-90)); // a9
-                        autonInstructions.add(new MoveInch(90));
-                        autonInstructions.add(new TurnDeg(45)); // a6
-                        autonInstructions.add(new MoveInch(120 * Math.sqrt(2)));
-                        autonInstructions.add(new TurnDeg(-45)); // e6
-                        autonInstructions.add(new MoveInch(-30));
-                        autonInstructions.add(new TurnDeg(90)); // e11
-                        autonInstructions.add(new MoveInch(60));
-                        autonInstructions.add(new TurnDeg(-90)); // c11
-                        autonInstructions.add(new MoveInch(270));
-                        break;
-                    case SLALOM:
-                        autonInstructions.add(new MoveInch(K.robotLength / 2));
-                        autonInstructions.add(new TurnDeg(-45)); // e2
-                        autonInstructions.add(new MoveInch(60 * Math.sqrt(2)));
-                        autonInstructions.add(new TurnDeg(45)); // c4
-                        autonInstructions.add(new MoveInch(120));
-                        autonInstructions.add(new TurnDeg(45)); // c8
-                        autonInstructions.add(new MoveInch(60 * Math.sqrt(2)));
-                        autonInstructions.add(new TurnDeg(-90)); // e10
-                        autonInstructions.add(new MoveInch(30 * Math.sqrt(2)));
-                        autonInstructions.add(new TurnDeg(-90)); // d11
-                        autonInstructions.add(new MoveInch(30 * Math.sqrt(2))); 
-                        autonInstructions.add(new TurnDeg(90)); // c10
-                        autonInstructions.add(new MoveInch(60 * Math.sqrt(2))); 
-                        autonInstructions.add(new TurnDeg(45)); // e8
-                        autonInstructions.add(new MoveInch(120));
-                        autonInstructions.add(new TurnDeg(45)); // e4
-                        autonInstructions.add(new MoveInch(60 * Math.sqrt(2))); 
-                        break;
-                    case BOUNCE:
-                        autonInstructions.add(new MoveInch(30 + K.robotLength / 2));
-                        autonInstructions.add(new TurnDeg(-90)); // c3
-                        autonInstructions.add(new MoveInch(60 - K.robotLength / 2));
-                        //a3
-                        autonInstructions.add(new MoveInch(-60 + K.robotLength / 2)); 
-                        autonInstructions.add(new TurnDeg(-45)); // c3
-                        autonInstructions.add(new MoveInch(-60 * Math.sqrt(2)));
-                        autonInstructions.add(new TurnDeg(90)); // e5
-                        autonInstructions.add(new MoveInch(30 * Math.sqrt(2)));
-                        autonInstructions.add(new TurnDeg(-45)); // d6
-                        autonInstructions.add(new MoveInch(90 - K.robotLength / 2));
-                        // a6
-                        autonInstructions.add(new MoveInch(-120 + K.robotLength / 2));
-                        autonInstructions.add(new TurnDeg(90)); // e6
-                        autonInstructions.add(new MoveInch(90));
-                        autonInstructions.add(new TurnDeg(-90)); // e9
-                        autonInstructions.add(new MoveInch(120 - K.robotLength / 2));
-                        // a9
-                        autonInstructions.add(new MoveInch(-30 + K.robotLength / 2));
-                        autonInstructions.add(new TurnDeg(-45)); // b9
-                        autonInstructions.add(new MoveInch(-60));
-                        break;
-                }
-                break;
-            default:
-                throw new Error("no auton mode selected");
-        }
+        // TODO: Add auton instructions
     }
 
     /**
@@ -506,23 +313,8 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void autonomousPeriodic() {
-        switch (selectedChallenge) {
-            case GALACTIC_SEARCH:
-                handlePopper(true);
-                if (ballsStored < K.MAX_BALLS) {
-                    intake.setPercentOutput(K.INTAKE_SPEED_IN);
-                } else {
-                    intake.setPercentOutput(K.INTAKE_SPEED_OUT);
-                }
-
-            case AUTONAV:
-            
-                while (!autonInstructions.isEmpty() && autonInstructions.get(0).doit(this)) {
-                    autonInstructions.remove(0);
-                }
-                break;
-            default:
-                throw new Error("unknown auton mode");
+        while (!autonInstructions.isEmpty() && autonInstructions.get(0).doit(this)) {
+            autonInstructions.remove(0);
         }
     }
 
@@ -555,10 +347,7 @@ public class Robot extends TimedRobot {
         popperOutButton = xboxController.getRawButton(K.R_SHOULDER);
         hangButton = false;
 
-        setPistonExtended(drawbridgeSol, drawbridgeButton);
-
         hang.set(hangButton);
-        setPistonExtended(hangSol, hangButton);
 
         if (arcadeButton) {
             ArcadeDrive = true;
@@ -727,27 +516,6 @@ public class Robot extends TimedRobot {
         }
     }
 
-    /**
-     * sets a pneumatic piston to be extended or retracted
-     * 
-     * @param solenoid the Solenoid or DoubleSolenoid to be extended or retracted
-     * @param value whether the solenoid should be extended
-     */
-    public void setPistonExtended(Object solenoid, boolean value) {
-        if (solenoid instanceof Solenoid) {
-            ((Solenoid) solenoid).set(value);
-        } else if (solenoid instanceof DoubleSolenoid) {
-            if (value) {
-                ((DoubleSolenoid) solenoid).set(DoubleSolenoid.Value.kForward);
-            } else {
-                ((DoubleSolenoid) solenoid).set(DoubleSolenoid.Value.kReverse);
-            }
-
-        } else {
-            throw new Error(solenoid.getClass().getSimpleName() + " is not a Solenoid or a DoubleSolenoid");
-        }
-    }
-
     // this code is called from auton and teleop periodic and uses sensors to automatically handle the popper
     void handlePopper(boolean shouldSetPopper) {
         // if a ball is ready to be popped
@@ -785,29 +553,5 @@ public class Robot extends TimedRobot {
                 popper.setPercentOutput(0);
             }
         }
-
-        if (drawbridgeSol.get() == Value.kForward) {
-            ballsStored = 0;
-            System.out.println("ballsStored: " + ballsStored);
-        }
-    }
-}
-
-enum Challenge {
-    GALACTIC_SEARCH, AUTONAV, HYPERDRIVE, INTERSTELLAR_ACCURACY, POWERPORT
-}
-
-enum Path {
-    BARREL_RACING, SLALOM, BOUNCE
-}
-
-enum GalacticSearchMode {
-    RedA(0), BlueA(1), RedB(2), BlueB(3);
-    private final int value;
-    private GalacticSearchMode(int value) {
-        this.value = value;
-    }
-    public int getValue() {
-        return value;
     }
 }
