@@ -52,20 +52,22 @@ public final class K {
     // ##########################################
 
     // can bus IDs. Can be found in Phoenix Tuner
-    public static final int LEFT_MASTER_ID = 3;
-    public static final MotorController.Type LEFT_MASTER_TYPE = Type.SparkMax;
-    public static final int LEFT_SLAVE_ID = 4;
-    public static final MotorController.Type LEFT_SLAVE_TYPE = Type.SparkMax;
-    public static final int RIGHT_MASTER_ID = 11;
+    public static final int LEFT_MASTER_ID = 29;
+    public static final MotorController.Type LEFT_MASTER_TYPE = Type.Talon;
+    public static final int LEFT_SLAVE_ID = 30;
+    public static final MotorController.Type LEFT_SLAVE_TYPE = Type.Talon;
+    public static final int RIGHT_MASTER_ID = 31;
     public static final MotorController.Type RIGHT_MASTER_TYPE = Type.Talon;
-    public static final int RIGHT_SLAVE_ID = 12;
+    public static final int RIGHT_SLAVE_ID = 32;
     public static final MotorController.Type RIGHT_SLAVE_TYPE = Type.Talon;
-    public static final int WINCH_MOTOR_ID = 15;
+    public static final int WINCH_MOTOR_ID = 35;
     public static final MotorController.Type WINCH_MOTOR_TYPE = Type.Talon;
-    public static final int INTAKE_ID = 14;
+    public static final int INTAKE_ID = 34;
     public static final MotorController.Type INTAKE_TYPE = Type.Talon;
-    public static final int POPPER_ID = 13;
+    public static final int POPPER_ID = 33;
     public static final MotorController.Type POPPER_TYPE = Type.Talon;
+    public static final int TURRET_ROTATION_ID = 1;
+    public static final MotorController.Type TURRET_ROTATION_TYPE = Type.SparkMax;
 
     /** the number of ticks in a full rotation */
     public static final int encoderRotation = 4096;
@@ -84,6 +86,7 @@ public final class K {
     public static final Gains COMPETITION_ROBOT_GAINS = new Gains(0.35, 0.00001, 100, 0.2, 0, 1.0);
     public static final Gains PRACTICE_ROTATION_GAINS = new Gains(0.004, 0.003, 0.001, 0.0, 0, 0.0);
     public static final Gains COMPETITION_ROTATION_GAINS = new Gains(0.06, 0.003, 0.001, 0.0, 0, 0.0);
+    public static final Gains TURRET_ROTATION_GAINS = new Gains(0.002, 0, 0, 0, 0, 1.0);
     public static final Constraints ROTATIONAL_GAIN_CONSTRAINTS = new Constraints(Double.POSITIVE_INFINITY, 20); // m/s and m/s^2
 
     // ##########################################
@@ -107,6 +110,9 @@ public final class K {
 
     public static final int INTAKE_COUNTER_COUNT_TIME = 3; // the number of cycles that a ball interrupts the sensor for when passing
     public static final int POPPER_COUNTER_JAM_TIME = 20; // the number of cycles that constitutes a popper jam
+
+    public static final double TURRET_ROTATION_ANGLE = 0.75;
+    public static final double TURRET_ROTATION_SPEED = 0.25;
 
     // Controller button IDs
     public static final int START = 7; // the mapping of the start button on a xbox controller

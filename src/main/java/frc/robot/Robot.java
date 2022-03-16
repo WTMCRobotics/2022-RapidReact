@@ -54,6 +54,8 @@ public class Robot extends TimedRobot {
     MotorController hangMotor = MotorControllerFactory.create(this, K.WINCH_MOTOR_ID, K.WINCH_MOTOR_TYPE);
     MotorController intake = MotorControllerFactory.create(this, K.INTAKE_ID, K.INTAKE_TYPE);
     MotorController popper = MotorControllerFactory.create(this, K.POPPER_ID, K.POPPER_TYPE);
+    MotorController turretRotation = MotorControllerFactory.create(this, K.TURRET_ROTATION_ID, K.TURRET_ROTATION_TYPE);
+    LimitedMotor turretRotationLimiter = new LimitedMotor(turretRotation, K.TURRET_ROTATION_ANGLE, K.TURRET_ROTATION_SPEED);
 
     // ##########################################
     // drivetrain and pid related constants and variables
@@ -151,9 +153,11 @@ public class Robot extends TimedRobot {
         initializeMotor(hangMotor, true, false);
         initializeMotor(intake, false, false);
         initializeMotor(popper, false, false);
+        initializeMotor(turretRotation, true, false);
 
-        initializeMotionMagicMaster(rightMaster);
-        initializeMotionMagicMaster(leftMaster);
+        initializeMotionMagicMaster(rightMaster, gains);
+        initializeMotionMagicMaster(leftMaster, gains);
+        initializeMotionMagicMaster(turretRotation, K.TURRET_ROTATION_GAINS);
 
         rightSlave.follow(rightMaster);
         leftSlave.follow(leftMaster);
@@ -177,7 +181,7 @@ public class Robot extends TimedRobot {
         talon.setInverted(inverted);
     }
 
-    public void initializeMotionMagicMaster(MotorController masterTalon) {
+    public void initializeMotionMagicMaster(MotorController masterTalon, Gains gains) {
         /* Factory default hardware to prevent unexpected behavior */
         masterTalon.reset();
 
@@ -403,7 +407,7 @@ public class Robot extends TimedRobot {
     @Override
     public void testPeriodic() {
 
-        if (!testDone) {
+        /*if (!testDone) {
             if (testRotation) {
                 testDone = turnDegs(testTurnAmount);
             } else {
@@ -412,7 +416,8 @@ public class Robot extends TimedRobot {
         } else {
             leftMaster.setPercentOutput(0);
             rightMaster.setPercentOutput(0);
-        }
+        }*/
+        turretRotationLimiter.tick();
     }
 
     public void testInit() {
@@ -421,8 +426,10 @@ public class Robot extends TimedRobot {
         testDone = false;
         rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
-        initializeMotionMagicMaster(rightMaster);
-        initializeMotionMagicMaster(leftMaster);
+        //initializeMotionMagicMaster(rightMaster);
+        //initializeMotionMagicMaster(leftMaster);
+        turretRotationLimiter.reset();
+        turretRotationLimiter.setTargetPos(0.5);
     }
 
     /**

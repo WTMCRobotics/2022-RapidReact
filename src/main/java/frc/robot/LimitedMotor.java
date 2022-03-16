@@ -2,6 +2,7 @@ package frc.robot;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkMaxRelativeEncoder;
+import com.revrobotics.SparkMaxLimitSwitch.Type;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 
@@ -61,11 +62,16 @@ class LimitedMotor {
      * moves the motor closer to the target position
      */
     public void tick() {
-        if (!this.startIsKnown){
-            this.pid.setReference(this.safeSpeed * -1, CANSparkMax.ControlType.kSmartVelocity);
-            this.start = this.encoder.getPosition(); // This is in rotations, but that can be changed.
-            this.startIsKnown = true;
+        if (!this.startIsKnown) {
+            System.out.println("Finding start");
+            this.pid.setReference(this.safeSpeed * -1, CANSparkMax.ControlType.kDutyCycle);
+            if (this.spark.getReverseLimitSwitch(Type.kNormallyOpen).isPressed()) {
+                System.out.println("Start found");
+                this.start = this.encoder.getPosition(); // This is in rotations, but that can be changed.
+                this.startIsKnown = true;
+            }
         } else {
+            System.out.println("Moving");
             this.pid.setReference(this.start + (this.range) * this.targetPos, CANSparkMax.ControlType.kSmartMotion);
         }
     }
@@ -90,6 +96,14 @@ class LimitedMotor {
         } else {
             this.targetPos = targetPos;
         }
+    }
+
+    /**
+     * Resets the calibration status of the limiter.
+     */
+    public void reset() {
+        this.start = 0;
+        this.startIsKnown = false;
     }
 
     /**
