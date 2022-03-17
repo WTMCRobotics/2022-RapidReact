@@ -28,6 +28,7 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.math.MathUtil;
 import frc.robot.auton.*;
@@ -169,6 +170,14 @@ public class Robot extends TimedRobot {
 
         pixy = Pixy2.createInstance(new SPILink());
         pixy.init();
+
+        // TODO: Make a proper field-selectable color selector
+        K.PIXY_LED_RED.set(true);
+        K.PIXY_LED_GREEN.set(true);
+        K.PIXY_LED_BLUE.set(false);
+
+        CameraServer.startAutomaticCapture();
+        CameraServer.startAutomaticCapture(); // two cameras
     }
 
     public void initializeMotor(MotorController talon, boolean neutralMode, boolean inverted) {
@@ -311,7 +320,7 @@ public class Robot extends TimedRobot {
         gyro.reset();
         rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
-        // TODO: Add auton instructions
+        autonInstructions.add(new MoveInch(36));
     }
 
     /**
@@ -411,6 +420,15 @@ public class Robot extends TimedRobot {
             handleLift(true);
         }
 
+        // Send status of the robot to the dashboard
+        SmartDashboard.putBoolean("Ball is loaded in shooter?", !K.SHOOTER_SENSOR.get());
+        switch (liftState) {
+            case Bottom: SmartDashboard.putString("Lift Status", "Waiting");
+            case MovingUp: SmartDashboard.putString("Lift Status", "Lifting");
+            case MovingDown: SmartDashboard.putString("Lift Status", "Returning");
+        }
+        SmartDashboard.putNumber("Turret Rotation", turretRotationLimiter.getTargetPos());
+
     }
 
     /**
@@ -451,8 +469,11 @@ public class Robot extends TimedRobot {
      */
     public boolean resetEncoders() {
         // TODO: Add error checking for new motor controller methods
-        /*ErrorCode rightError = */rightMaster.setEncoderPosition(0);
-        /*ErrorCode leftError = */leftMaster.setEncoderPosition(0);
+        rightMaster.setEncoderPosition(0);
+        leftMaster.setEncoderPosition(0);
+        turretRotation.setEncoderPosition(0);
+        turretHood.setEncoderPosition(0);
+        turretShooter.setEncoderPosition(0);
         return true; // return rightError.value == 0 && leftError.value == 0;
     }
 
@@ -555,7 +576,7 @@ public class Robot extends TimedRobot {
         }
 
         // if a ball is ready to be popped
-        if (colorSensor.getProximity() > 2) { // TODO: Calibrate this!
+        if (colorSensor.getProximity() > 2) { // TODO: Calibrate this! CANNOT RUN WITHOUT!
             liftState = LiftState.MovingUp;
         }
 

@@ -4,6 +4,7 @@ import frc.robot.motor.MotorController;
 import frc.robot.motor.MotorController.Type;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DigitalOutput;
 
 // The K class contains all of the constants that the robot uses.
 // This makes it easier to quickly edit parameters without having to dig
@@ -29,6 +30,12 @@ public final class K {
     public static final int LIFT_TOP_SENSOR_ID = 1;
     /** sensor for counting balls */
     public static final int SHOOTER_SENSOR_ID = 2;
+    /** Pixy LEDs - red */
+    public static final int PIXY_LED_RED_ID = 3;
+    /** Pixy LEDs - green */
+    public static final int PIXY_LED_GREEN_ID = 4;
+    /** Pixy LEDs - blue */
+    public static final int PIXY_LED_BLUE_ID = 5;
 
     // Binary Sensors
 
@@ -38,6 +45,12 @@ public final class K {
     public static final DigitalInput LIFT_TOP_SENSOR = new DigitalInput(LIFT_TOP_SENSOR_ID);
     /** sensor for counting balls */
     public static final DigitalInput SHOOTER_SENSOR = new DigitalInput(SHOOTER_SENSOR_ID);
+    /** Pixy LEDs - red */
+    public static final DigitalOutput PIXY_LED_RED = new DigitalOutput(PIXY_LED_RED_ID);
+    /** Pixy LEDs - green */
+    public static final DigitalOutput PIXY_LED_GREEN = new DigitalOutput(PIXY_LED_GREEN_ID);
+    /** Pixy LEDs - blue */
+    public static final DigitalOutput PIXY_LED_BLUE = new DigitalOutput(PIXY_LED_BLUE_ID);
 
 
     // ##########################################
