@@ -23,53 +23,48 @@ public final class K {
 
     // DIO IDs
 
-    /** this should be pulled low on the 2016 Practice Robot */
-    public static final int ROBOT_SENSOR_ID = 9;
-    /** sensor for when the winch is extended */
-    public static final int HANG_SET_SENSOR_ID = 0;
-    /** sensor for when the winch is retracted */
-    public static final int HANG_DEFAULT_SENSOR_ID = 1;
-    /** sensor for when a ball is waiting to be popped up */
-    public static final int INTAKE_SENSOR_ID = 2;
+    /** lift sensor - bottom */
+    public static final int LIFT_BOTTOM_SENSOR_ID = 0;
+    /** lift sensor - top */
+    public static final int LIFT_TOP_SENSOR_ID = 1;
     /** sensor for counting balls */
-    public static final int INTAKE_COUNTER_SENSOR_ID = 3;
+    public static final int SHOOTER_SENSOR_ID = 2;
 
     // Binary Sensors
 
-    /** this should be pulled low on the 2020 Practice Robot */
-    public static final DigitalInput ROBOT_SENSOR = new DigitalInput(ROBOT_SENSOR_ID);
-    /** sensor for when the winch is extended */ 
-    public static final DigitalInput HANG_SET_SENSOR = new DigitalInput(HANG_SET_SENSOR_ID);
-    /** sensor for when the winch is retracted */
-    public static final DigitalInput HANG_DEFAULT_SENSOR = new DigitalInput(HANG_DEFAULT_SENSOR_ID);
-    /** sensor for when a ball is waiting to be popped up */
-    public static final DigitalInput INTAKE_SENSOR = new DigitalInput(INTAKE_SENSOR_ID);
+    /** lift sensor - bottom */
+    public static final DigitalInput LIFT_BOTTOM_SENSOR = new DigitalInput(LIFT_BOTTOM_SENSOR_ID);
+    /** lift sensor - top */
+    public static final DigitalInput LIFT_TOP_SENSOR = new DigitalInput(LIFT_TOP_SENSOR_ID);
     /** sensor for counting balls */
-    public static final DigitalInput POPPER_SENSOR = new DigitalInput(INTAKE_COUNTER_SENSOR_ID);
+    public static final DigitalInput SHOOTER_SENSOR = new DigitalInput(SHOOTER_SENSOR_ID);
+
 
     // ##########################################
     // talon related constants and variables
     // ##########################################
 
     // can bus IDs. Can be found in Phoenix Tuner
-    public static final int LEFT_MASTER_ID = 29;
+    public static final int LEFT_MASTER_ID = 25;
     public static final MotorController.Type LEFT_MASTER_TYPE = Type.Talon;
-    public static final int LEFT_SLAVE_ID = 30;
+    public static final int LEFT_SLAVE_ID = 26;
     public static final MotorController.Type LEFT_SLAVE_TYPE = Type.Talon;
-    public static final int RIGHT_MASTER_ID = 31;
+    public static final int RIGHT_MASTER_ID = 27;
     public static final MotorController.Type RIGHT_MASTER_TYPE = Type.Talon;
-    public static final int RIGHT_SLAVE_ID = 32;
+    public static final int RIGHT_SLAVE_ID = 28;
     public static final MotorController.Type RIGHT_SLAVE_TYPE = Type.Talon;
-    public static final int WINCH_MOTOR_ID = 35;
-    public static final MotorController.Type WINCH_MOTOR_TYPE = Type.Talon;
-    public static final int INTAKE_ID = 34;
-    public static final MotorController.Type INTAKE_TYPE = Type.Talon;
-    public static final int POPPER_ID = 33;
-    public static final MotorController.Type POPPER_TYPE = Type.Talon;
-    public static final int TURRET_ROTATION_ID = 1;
+    public static final int INTAKE_ID = 8;
+    public static final MotorController.Type INTAKE_TYPE = Type.SparkMax;
+    public static final int LIFT_ID = 33;
+    public static final MotorController.Type LIFT_TYPE = Type.Talon;
+    public static final int TURRET_ROTATION_ID = 5;
     public static final MotorController.Type TURRET_ROTATION_TYPE = Type.SparkMax;
+    public static final int TURRET_SHOOTER_ID = 6; // TODO
+    public static final MotorController.Type TURRET_SHOOTER_TYPE = Type.SparkMax;
+    public static final int TURRET_HOOD_ID = 7; // TODO
+    public static final MotorController.Type TURRET_HOOD_TYPE = Type.SparkMax;
 
-    /** the number of ticks in a full rotation */
+    /** the number of ticks in a full rotation (Talon only - Spark stores it onboard) */
     public static final int encoderRotation = 4096;
 
     // talon config
@@ -100,13 +95,8 @@ public final class K {
     public static final double INTAKE_SPEED_IN = 0.25;
     public static final double INTAKE_SPEED_OUT = -0.25;
 
-    // the speed of the popper motor. Accepts values between 1 and -1.
-    public static final double POPPER_SPEED_IN = 0.8;
-    public static final double POPPER_SPEED_OUT = -0.2;
-
-    // the Amount of time popper motor should go for in robot cycles.
-    public static final int POPPER_TIME_IN = 35;
-    public static final int POPPER_TIME_OUT = 10;
+    // the speed of the popper motor. Accepts values between 0 and 1.
+    public static final double LIFT_SPEED = 0.1;
 
     public static final int INTAKE_COUNTER_COUNT_TIME = 3; // the number of cycles that a ball interrupts the sensor for when passing
     public static final int POPPER_COUNTER_JAM_TIME = 20; // the number of cycles that constitutes a popper jam
@@ -118,6 +108,9 @@ public final class K {
     public static final int START = 7; // the mapping of the start button on a xbox controller
     public static final int SELECT = 8; // the mapping of the select button on a xbox controller
     public static final int A_BUTTON = 1; // the mapping of the A button on a xbox controller
+    public static final int B_BUTTON = 2; // the mapping of the A button on a xbox controller
+    public static final int X_BUTTON = 3; // the mapping of the A button on a xbox controller
+    public static final int Y_BUTTON = 4; // the mapping of the A button on a xbox controller
     public static final int R_STICK = 10; // the mapping of the right shoulder on a xbox controller
     public static final int L_STICK = 9; // the mapping of the left shoulder on a xbox controller
     public static final int R_SHOULDER = 6; // the mapping of the right shoulder on a xbox controller

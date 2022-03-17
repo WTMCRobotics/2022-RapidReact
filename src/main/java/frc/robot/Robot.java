@@ -13,17 +13,22 @@ import java.util.ArrayList;
 
 import com.kauailabs.navx.frc.AHRS;
 
+import com.revrobotics.ColorSensorV3;
+
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.SPI.Port;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.math.MathUtil;
 import frc.robot.auton.*;
 import io.github.pseudoresonance.pixy2api.*;
@@ -51,11 +56,12 @@ public class Robot extends TimedRobot {
     MotorController leftSlave = MotorControllerFactory.create(this, K.LEFT_SLAVE_ID, K.LEFT_SLAVE_TYPE);
     public MotorController rightMaster = MotorControllerFactory.create(this, K.RIGHT_MASTER_ID, K.RIGHT_MASTER_TYPE);
     MotorController rightSlave = MotorControllerFactory.create(this, K.RIGHT_SLAVE_ID, K.RIGHT_SLAVE_TYPE);
-    MotorController hangMotor = MotorControllerFactory.create(this, K.WINCH_MOTOR_ID, K.WINCH_MOTOR_TYPE);
     MotorController intake = MotorControllerFactory.create(this, K.INTAKE_ID, K.INTAKE_TYPE);
-    MotorController popper = MotorControllerFactory.create(this, K.POPPER_ID, K.POPPER_TYPE);
+    MotorController lift = MotorControllerFactory.create(this, K.LIFT_ID, K.LIFT_TYPE);
     MotorController turretRotation = MotorControllerFactory.create(this, K.TURRET_ROTATION_ID, K.TURRET_ROTATION_TYPE);
     LimitedMotor turretRotationLimiter = new LimitedMotor(turretRotation, K.TURRET_ROTATION_ANGLE, K.TURRET_ROTATION_SPEED);
+    MotorController turretShooter = MotorControllerFactory.create(this, K.TURRET_SHOOTER_ID, K.TURRET_SHOOTER_TYPE);
+    MotorController turretHood = MotorControllerFactory.create(this, K.TURRET_HOOD_ID, K.TURRET_HOOD_TYPE);
 
     // ##########################################
     // drivetrain and pid related constants and variables
@@ -93,26 +99,25 @@ public class Robot extends TimedRobot {
     static Gains gains; // used for drivetrain motion magic when moving and is ste to
                         // K.PRACTICE_ROBOT_GAINS or COMPETITION_ROBOT_GAINS
 
-    // the amount of time in robot cycles that this will move
-    int popperInTime = 0;
-    int popperOutTime = 0;
+    // The current state of the lift system
+    static enum LiftState {
+        Bottom,
+        MovingUp,
+        MovingDown
+    }
+    LiftState liftState;
 
-    int popperCounterTime; // the number of cycles that the counter sensor has been interrupted for
-    int intakeTime; // the number of cycles that the counter sensor has bean interrupted for
     int ballsStored = 0; // the number of balls in the robot
 
-    // ##########################################
-    // Drawbridge and hang related constants and variables
-    // ##########################################
-
-    // declares objects for the TwoStateMotor class
-    TwoStateMotor hang = new RatchetMotor(0.5, -0.1, hangMotor, K.HANG_DEFAULT_SENSOR, K.HANG_SET_SENSOR);;
+    ColorSensorV3 colorSensor = new ColorSensorV3(I2C.Port.kOnboard);
+    Alliance currentAlliance = Alliance.Invalid;
 
     // ##########################################
     // Controller related constants and variables
     // ##########################################
 
     XboxController xboxController = new XboxController(0); // driver
+    XboxController guitarController = new XboxController(1); // codriver
     double leftjoyY; // y-axis of the left joystick on the driver's controller
     double rightjoyY; // y-axis of the right joystick on the driver's controller
     double leftjoyX; // x-axis of the left joystick on the driver's controller
@@ -125,8 +130,10 @@ public class Robot extends TimedRobot {
     boolean hangButton; // true if the button that extends the hang mechanism is pressed
     boolean intakeInButton; // true if the button that intakes is pressed
     boolean intakeOutButton; // true if the button that runs the intake in reverse is pressed
-    boolean popperInButton; // true if the button that runs the popper is pressed
-    boolean popperOutButton; // true if the button that reverses the popper is pressed
+    boolean liftButton; // true if the button that runs the lift is pressed
+    boolean turretLeftButton; // true if the button that turns the turret left is pressed
+    boolean turretRightButton; // true if the button that turns the turret right is pressed
+    boolean turretFireButton; // true if the button that fires the turret is pressed
 
     Pixy2 pixy;
 
@@ -138,11 +145,9 @@ public class Robot extends TimedRobot {
     public void robotInit() {
         System.out.println("starting robotInit()");
 
-        isPracticeRobot = !K.ROBOT_SENSOR.get();
         circumference = 8 * Math.PI;
         gains = K.COMPETITION_ROBOT_GAINS;
         rotationGains = K.COMPETITION_ROTATION_GAINS;
-        System.out.println("using 8 inch wheels");
 
         rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
@@ -150,9 +155,8 @@ public class Robot extends TimedRobot {
         initializeMotor(leftSlave, true, false);
         initializeMotor(rightMaster, true, true);
         initializeMotor(rightSlave, true, true);
-        initializeMotor(hangMotor, true, false);
         initializeMotor(intake, false, false);
-        initializeMotor(popper, false, false);
+        initializeMotor(lift, true, false);
         initializeMotor(turretRotation, true, false);
 
         initializeMotionMagicMaster(rightMaster, gains);
@@ -227,8 +231,6 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotPeriodic() {
-        hang.tick();
-
         SmartDashboard.putNumber("Balls Stored", ballsStored);
     }
 
@@ -328,6 +330,7 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopInit() {
         pixy.setLamp((byte)0, (byte)0);
+        currentAlliance = DriverStation.getAlliance();
     }
 
     /**
@@ -344,14 +347,12 @@ public class Robot extends TimedRobot {
         rightjoyX = xboxController.getRightX();
         arcadeButton = xboxController.getRawButton(K.L_STICK);
         tankButton = xboxController.getRawButton(K.R_STICK);
-        drawbridgeButton = xboxController.getRawButton(K.A_BUTTON);
-        intakeInButton = 0.1 < xboxController.getLeftTriggerAxis();
-        intakeOutButton = 0.1 < xboxController.getRightTriggerAxis();
-        popperInButton = xboxController.getRawButton(K.L_SHOULDER);
-        popperOutButton = xboxController.getRawButton(K.R_SHOULDER);
-        hangButton = false;
-
-        hang.set(hangButton);
+        intakeInButton = guitarController.getPOV() == 180;
+        intakeOutButton = guitarController.getPOV() == 0;
+        liftButton = guitarController.getRawButton(K.Y_BUTTON);
+        turretRightButton = guitarController.getRawButton(K.A_BUTTON);
+        turretLeftButton = guitarController.getRawButton(K.B_BUTTON);
+        turretFireButton = guitarController.getRightX() > 0.1;
 
         if (arcadeButton) {
             ArcadeDrive = true;
@@ -371,6 +372,20 @@ public class Robot extends TimedRobot {
             rightMaster.setPercentOutput(rightjoyY);
         }
 
+        // this code handles turret stuff
+        if (turretLeftButton) {
+            turretRotationLimiter.setTargetPos(turretRotationLimiter.getTargetPos() + 0.01);
+        }
+        if (turretRightButton) {
+            turretRotationLimiter.setTargetPos(turretRotationLimiter.getTargetPos() - 0.01);
+        }
+        if (turretFireButton) {
+            // TODO: Calibrate velocity settings
+            turretShooter.setPercentOutput(guitarController.getRightX());
+        }
+
+        turretRotationLimiter.tick();
+
         if (intakeInButton && ballsStored >= K.MAX_BALLS) {
             xboxController.setRumble(RumbleType.kLeftRumble, 1.0);
             xboxController.setRumble(RumbleType.kRightRumble, 1.0);
@@ -388,15 +403,12 @@ public class Robot extends TimedRobot {
             intake.setPercentOutput(0);
         }
 
-        // this code handles the popper
-        if (popperInButton) {
-            popper.setPercentOutput(K.POPPER_SPEED_IN);
-            handlePopper(false);
-        } else if (popperOutButton) {
-            popper.setPercentOutput(K.POPPER_SPEED_OUT);
-            handlePopper(false);
+        // this code handles the lift
+        if (liftButton) {
+            lift.setPercentOutput(K.LIFT_SPEED);
+            handleLift(false);
         } else {
-            handlePopper(true);
+            handleLift(true);
         }
 
     }
@@ -524,40 +536,46 @@ public class Robot extends TimedRobot {
     }
 
     // this code is called from auton and teleop periodic and uses sensors to automatically handle the popper
-    void handlePopper(boolean shouldSetPopper) {
+    void handleLift(boolean shouldSetLift) {
+        if (shouldSetLift && liftState != LiftState.MovingDown) {
+            // if there is a ball in the shooter, do not lift
+            if (!K.SHOOTER_SENSOR.get()) {
+                liftState = LiftState.Bottom;
+                lift.setPercentOutput(0);
+                return;
+            }
+
+            // if there is a ball that is the wrong color, do not lift
+            int blue = colorSensor.getBlue(), red = colorSensor.getRed();
+            if ((currentAlliance == Alliance.Blue && red > blue) || (currentAlliance == Alliance.Red && blue > red)) {
+                liftState = LiftState.Bottom;
+                lift.setPercentOutput(0);
+                return;
+            }
+        }
+
         // if a ball is ready to be popped
-        if (!K.INTAKE_SENSOR.get()) {
-            popperInTime = K.POPPER_TIME_IN;
-            intakeTime++;
-        } else {
-            if (intakeTime > K.INTAKE_COUNTER_COUNT_TIME) {
-                System.out.println("ball incoming");
-                //ballsStored++;
-                System.out.println("ballsStored: " + ballsStored);
-            } else if (intakeTime > 0) {
-                System.out.println("intakeTime: " + intakeTime);
-            }
-            intakeTime = 0;
+        if (colorSensor.getProximity() > 2) { // TODO: Calibrate this!
+            liftState = LiftState.MovingUp;
         }
 
-        // if there is a ball at the top of the popper
-        if (!K.POPPER_SENSOR.get()) {
-            if (++popperCounterTime > K.POPPER_COUNTER_JAM_TIME) {
-                System.out.println("popper jammed");
-                popperInTime = K.POPPER_TIME_IN;
-                popperOutTime = K.POPPER_TIME_OUT;
-            }
-        } else {
-            popperCounterTime = 0;
-        }
-
-        if (shouldSetPopper) {
-            if (popperOutTime-- > 0) {
-                popper.setPercentOutput(K.POPPER_SPEED_OUT);
-            } else if (popperInTime-- > 0) {
-                popper.setPercentOutput(K.POPPER_SPEED_IN);
-            } else {
-                popper.setPercentOutput(0);
+        if (shouldSetLift) {
+            switch (liftState) {
+            case Bottom:
+                lift.setPercentOutput(0);
+                break;
+            case MovingUp:
+                if (!K.LIFT_TOP_SENSOR.get()) {
+                    liftState = LiftState.MovingDown;
+                }
+                lift.setPercentOutput(K.LIFT_SPEED);
+                break;
+            case MovingDown:
+                if (!K.LIFT_BOTTOM_SENSOR.get()) {
+                    liftState = LiftState.Bottom;
+                    lift.setPercentOutput(0);
+                } else lift.setPercentOutput(K.LIFT_SPEED);
+                break;
             }
         }
     }
