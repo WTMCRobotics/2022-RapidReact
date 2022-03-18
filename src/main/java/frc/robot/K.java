@@ -110,7 +110,10 @@ public final class K {
     public static final double INTAKE_SPEED_IN = 1;
     public static final double INTAKE_SPEED_OUT = -1;
 
-    // the speed of the popper motor. Accepts values between 0 and 1.
+    // the speed of the turret intake motor. Accepts values between 0 and 1.
+    public static final double TURRET_INTAKE_SPEED = 0.5;
+
+    // the speed of the lift motor. Accepts values between 0 and 1.
     public static final double LIFT_SPEED = 0.1;
 
     public static final int INTAKE_COUNTER_COUNT_TIME = 3; // the number of cycles that a ball interrupts the sensor for when passing

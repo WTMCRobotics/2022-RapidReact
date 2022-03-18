@@ -63,6 +63,7 @@ public class Robot extends TimedRobot {
     LimitedMotor turretRotationLimiter = new LimitedMotor(turretRotation, K.TURRET_ROTATION_ANGLE, K.TURRET_ROTATION_SPEED);
     MotorController turretShooter = MotorControllerFactory.create(this, K.TURRET_SHOOTER_ID, K.TURRET_SHOOTER_TYPE);
     MotorController turretHood = MotorControllerFactory.create(this, K.TURRET_HOOD_ID, K.TURRET_HOOD_TYPE);
+    MotorController turretIntake = MotorControllerFactory.create(this, K.TURRET_INTAKE_ID, K.TURRET_INTAKE_TYPE);
 
     // ##########################################
     // drivetrain and pid related constants and variables
@@ -104,6 +105,7 @@ public class Robot extends TimedRobot {
     static enum LiftState {
         Bottom,
         MovingUp,
+        Top,
         MovingDown
     }
     LiftState liftState = LiftState.Bottom;
@@ -134,7 +136,8 @@ public class Robot extends TimedRobot {
     boolean liftButton; // true if the button that runs the lift is pressed
     boolean turretLeftButton; // true if the button that turns the turret left is pressed
     boolean turretRightButton; // true if the button that turns the turret right is pressed
-    boolean turretFireButton; // true if the button that fires the turret is pressed
+    boolean turretShooterSpinButton; // true if the button that spins the turret shooter is pressed
+    boolean turretLaunchButton; // true if the button that spins the turret intake is pressed
 
     Pixy2 pixy;
 
@@ -159,6 +162,9 @@ public class Robot extends TimedRobot {
         initializeMotor(intake, false, false);
         initializeMotor(lift, true, false);
         initializeMotor(turretRotation, true, false);
+        initializeMotor(turretShooter, false, false);
+        initializeMotor(turretHood, true, false);
+        initializeMotor(turretIntake, false, false);
 
         initializeMotionMagicMaster(rightMaster, gains);
         initializeMotionMagicMaster(leftMaster, gains);
@@ -361,7 +367,8 @@ public class Robot extends TimedRobot {
         liftButton = guitarController.getRawButton(K.Y_BUTTON);
         turretRightButton = guitarController.getRawButton(K.A_BUTTON);
         turretLeftButton = guitarController.getRawButton(K.B_BUTTON);
-        turretFireButton = guitarController.getRightX() > 0.1;
+        turretShooterSpinButton = guitarController.getRightX() > 0.1;
+        turretLaunchButton = guitarController.getRawButton(K.X_BUTTON);
 
         if (arcadeButton) {
             ArcadeDrive = true;
@@ -388,9 +395,16 @@ public class Robot extends TimedRobot {
         if (turretRightButton) {
             turretRotationLimiter.setTargetPos(turretRotationLimiter.getTargetPos() - 0.01);
         }
-        if (turretFireButton) {
+        if (turretShooterSpinButton) {
             // TODO: Calibrate velocity settings
             turretShooter.setPercentOutput(guitarController.getRightX());
+        } else {
+            turretShooter.setPercentOutput(0);
+        }
+        if (turretLaunchButton) {
+            turretIntake.setPercentOutput(K.TURRET_INTAKE_SPEED);
+        } else {
+            turretIntake.setPercentOutput(0);
         }
 
         turretRotationLimiter.tick();
@@ -423,12 +437,13 @@ public class Robot extends TimedRobot {
         // Send status of the robot to the dashboard
         SmartDashboard.putBoolean("Ball is loaded in shooter?", !K.SHOOTER_SENSOR.get());
         switch (liftState) {
-            case Bottom: SmartDashboard.putString("Lift Status", "Waiting");
-            case MovingUp: SmartDashboard.putString("Lift Status", "Lifting");
-            case MovingDown: SmartDashboard.putString("Lift Status", "Returning");
+            case Bottom: SmartDashboard.putString("Lift Status", "Waiting"); break;
+            case MovingUp: SmartDashboard.putString("Lift Status", "Lifting"); break;
+            case Top: SmartDashboard.putString("Lift Status", "Running Turret Intake"); break;
+            case MovingDown: SmartDashboard.putString("Lift Status", "Returning"); break;
         }
         SmartDashboard.putNumber("Turret Rotation", turretRotationLimiter.getTargetPos());
-
+        SmartDashboard.putNumber("Shooter Velocity", turretShooter.getSensorVelocity());
     }
 
     /**
@@ -474,6 +489,7 @@ public class Robot extends TimedRobot {
         turretRotation.setEncoderPosition(0);
         turretHood.setEncoderPosition(0);
         turretShooter.setEncoderPosition(0);
+        turretRotationLimiter.reset();
         return true; // return rightError.value == 0 && leftError.value == 0;
     }
 
@@ -592,9 +608,16 @@ public class Robot extends TimedRobot {
                 break;
             case MovingUp:
                 if (!K.LIFT_TOP_SENSOR.get()) {
+                    liftState = LiftState.Top;
+                    lift.setPercentOutput(0);
+                } else lift.setPercentOutput(K.LIFT_SPEED);
+                break;
+            case Top:
+                if (!K.SHOOTER_SENSOR.get()) {
                     liftState = LiftState.MovingDown;
-                }
-                lift.setPercentOutput(K.LIFT_SPEED);
+                    turretIntake.setPercentOutput(0);
+                } else turretIntake.setPercentOutput(K.TURRET_INTAKE_SPEED);
+                lift.setPercentOutput(0);
                 break;
             case MovingDown:
                 if (!K.LIFT_BOTTOM_SENSOR.get()) {
