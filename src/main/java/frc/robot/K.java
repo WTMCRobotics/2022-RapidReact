@@ -72,9 +72,11 @@ public final class K {
     public static final MotorController.Type LIFT_TYPE = Type.Talon;
     public static final int TURRET_ROTATION_ID = 5;
     public static final MotorController.Type TURRET_ROTATION_TYPE = Type.SparkMax;
-    public static final int TURRET_SHOOTER_ID = 6; // TODO
+    public static final int TURRET_SHOOTER_ID = 4;
     public static final MotorController.Type TURRET_SHOOTER_TYPE = Type.SparkMax;
-    public static final int TURRET_HOOD_ID = 7; // TODO
+    public static final int TURRET_INTAKE_ID = 3;
+    public static final MotorController.Type TURRET_INTAKE_TYPE = Type.SparkMax;
+    public static final int TURRET_HOOD_ID = 2;
     public static final MotorController.Type TURRET_HOOD_TYPE = Type.SparkMax;
 
     /** the number of ticks in a full rotation (Talon only - Spark stores it onboard) */
@@ -105,8 +107,8 @@ public final class K {
     public static final int MAX_BALLS = 3;
 
     // the speed of the intake motor. Accepts values between 1 and -1.
-    public static final double INTAKE_SPEED_IN = 0.25;
-    public static final double INTAKE_SPEED_OUT = -0.25;
+    public static final double INTAKE_SPEED_IN = 1;
+    public static final double INTAKE_SPEED_OUT = -1;
 
     // the speed of the popper motor. Accepts values between 0 and 1.
     public static final double LIFT_SPEED = 0.1;

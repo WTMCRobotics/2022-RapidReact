@@ -106,7 +106,7 @@ public class Robot extends TimedRobot {
         MovingUp,
         MovingDown
     }
-    LiftState liftState;
+    LiftState liftState = LiftState.Bottom;
 
     int ballsStored = 0; // the number of balls in the robot
 
@@ -350,14 +350,14 @@ public class Robot extends TimedRobot {
 
         // this code updates the controller variables to the correct value at the
         // beginning of teleopPeriodic()
-        leftjoyY = xboxController.getLeftY();
-        rightjoyY = xboxController.getRightY();
-        leftjoyX = xboxController.getLeftX();
-        rightjoyX = xboxController.getRightX();
+        leftjoyY = deadzone(xboxController.getLeftY(), 0.1);
+        rightjoyY = deadzone(xboxController.getRightY(), 0.1);
+        leftjoyX = deadzone(xboxController.getLeftX(), 0.1);
+        rightjoyX = deadzone(xboxController.getRightX(), 0.25);
         arcadeButton = xboxController.getRawButton(K.L_STICK);
         tankButton = xboxController.getRawButton(K.R_STICK);
-        intakeInButton = guitarController.getPOV() == 180;
-        intakeOutButton = guitarController.getPOV() == 0;
+        intakeInButton = guitarController.getPOV() == 0;
+        intakeOutButton = guitarController.getPOV() == 180;
         liftButton = guitarController.getRawButton(K.Y_BUTTON);
         turretRightButton = guitarController.getRawButton(K.A_BUTTON);
         turretLeftButton = guitarController.getRawButton(K.B_BUTTON);
@@ -475,6 +475,11 @@ public class Robot extends TimedRobot {
         turretHood.setEncoderPosition(0);
         turretShooter.setEncoderPosition(0);
         return true; // return rightError.value == 0 && leftError.value == 0;
+    }
+
+    public double deadzone(double n, double min) {
+        if (Math.abs(n) < min) return 0;
+        else return n;
     }
 
     /**
