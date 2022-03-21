@@ -30,6 +30,8 @@ class LimitedMotor {
     // Where 1 is the forward limit switch and 0 is the reverse limit switch
     private double targetPos;
 
+    public boolean disabled = false;
+
     /**
      * Creates a new limited motor
      * 
@@ -62,6 +64,7 @@ class LimitedMotor {
      * moves the motor closer to the target position
      */
     public void tick() {
+        if (disabled) return;
         if (!this.startIsKnown) {
             System.out.println("Finding start");
             this.pid.setReference(this.safeSpeed * -1, CANSparkMax.ControlType.kDutyCycle);

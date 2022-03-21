@@ -12,8 +12,12 @@ import frc.robot.motor.*;
 import java.util.ArrayList;
 
 import com.kauailabs.navx.frc.AHRS;
-
 import com.revrobotics.ColorSensorV3;
+import com.revrobotics.ColorSensorV3.ColorSensorResolution;
+import com.revrobotics.ColorSensorV3.ColorSensorMeasurementRate;
+import com.revrobotics.ColorSensorV3.GainFactor;
+import com.revrobotics.ColorSensorV3.ProximitySensorMeasurementRate;
+import com.revrobotics.ColorSensorV3.ProximitySensorResolution;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -155,10 +159,10 @@ public class Robot extends TimedRobot {
 
         rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
-        initializeMotor(leftMaster, true, false);
-        initializeMotor(leftSlave, true, false);
-        initializeMotor(rightMaster, true, true);
-        initializeMotor(rightSlave, true, true);
+        initializeMotor(leftMaster, false, false);
+        initializeMotor(leftSlave, false, false);
+        initializeMotor(rightMaster, false, true);
+        initializeMotor(rightSlave, false, true);
         initializeMotor(intake, false, false);
         initializeMotor(lift, true, false);
         initializeMotor(turretRotation, true, false);
@@ -182,8 +186,13 @@ public class Robot extends TimedRobot {
         K.PIXY_LED_GREEN.set(true);
         K.PIXY_LED_BLUE.set(false);
 
+        colorSensor.configureColorSensor(ColorSensorResolution.kColorSensorRes18bit, ColorSensorMeasurementRate.kColorRate100ms, GainFactor.kGain1x);
+        colorSensor.configureProximitySensor(ProximitySensorResolution.kProxRes11bit, ProximitySensorMeasurementRate.kProxRate100ms);
+
         CameraServer.startAutomaticCapture();
         CameraServer.startAutomaticCapture(); // two cameras
+
+        turretRotationLimiter.disabled = true; // TODO: DISABLE ONCE LIMIT SWITCHES EXIST
     }
 
     public void initializeMotor(MotorController talon, boolean neutralMode, boolean inverted) {
@@ -326,7 +335,10 @@ public class Robot extends TimedRobot {
         gyro.reset();
         rotationPID = new ProfiledPIDController(rotationGains.P, rotationGains.I, rotationGains.D, K.ROTATIONAL_GAIN_CONSTRAINTS);
 
-        autonInstructions.add(new MoveInch(36));
+        autonInstructions.add(new StartPushing());
+        autonInstructions.add(new WaitMs(4000));
+        autonInstructions.add(new Stop());
+        autonInstructions.add(new WaitMs(100000));
     }
 
     /**
@@ -451,7 +463,7 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void testPeriodic() {
-
+        System.out.println(colorSensor.getRed() + " " + colorSensor.getGreen() + " " + colorSensor.getBlue() + " " + colorSensor.getProximity());
         /*if (!testDone) {
             if (testRotation) {
                 testDone = turnDegs(testTurnAmount);
@@ -462,7 +474,7 @@ public class Robot extends TimedRobot {
             leftMaster.setPercentOutput(0);
             rightMaster.setPercentOutput(0);
         }*/
-        turretRotationLimiter.tick();
+        //turretRotationLimiter.tick();
     }
 
     public void testInit() {
@@ -473,8 +485,8 @@ public class Robot extends TimedRobot {
 
         //initializeMotionMagicMaster(rightMaster);
         //initializeMotionMagicMaster(leftMaster);
-        turretRotationLimiter.reset();
-        turretRotationLimiter.setTargetPos(0.5);
+        //turretRotationLimiter.reset();
+        //turretRotationLimiter.setTargetPos(0.5);
     }
 
     /**
@@ -597,7 +609,7 @@ public class Robot extends TimedRobot {
         }
 
         // if a ball is ready to be popped
-        if (colorSensor.getProximity() > 2) { // TODO: Calibrate this! CANNOT RUN WITHOUT!
+        if (liftState == LiftState.Bottom && colorSensor.getProximity() > 100) { // TODO: Calibrate this! CANNOT RUN WITHOUT!
             liftState = LiftState.MovingUp;
         }
 
