@@ -178,7 +178,7 @@ public class Robot extends TimedRobot {
         pixy.init();
 
         // TODO: Make a proper field-selectable color selector
-        K.PIXY_LED_RED.set(true);
+        K.PIXY_LED_RED.set(false);
         K.PIXY_LED_GREEN.set(true);
         K.PIXY_LED_BLUE.set(false);
 
@@ -597,7 +597,7 @@ public class Robot extends TimedRobot {
         }
 
         // if a ball is ready to be popped
-        if (colorSensor.getProximity() > 2) { // TODO: Calibrate this! CANNOT RUN WITHOUT!
+        if (colorSensor.getProximity() > 200) { // TODO: Calibrate this! CANNOT RUN WITHOUT!
             liftState = LiftState.MovingUp;
         }
 
@@ -607,7 +607,7 @@ public class Robot extends TimedRobot {
                 lift.setPercentOutput(0);
                 break;
             case MovingUp:
-                if (!K.LIFT_TOP_SENSOR.get()) {
+                if (lift.getForwardLimit()) {
                     liftState = LiftState.Top;
                     lift.setPercentOutput(0);
                 } else lift.setPercentOutput(K.LIFT_SPEED);
@@ -620,10 +620,10 @@ public class Robot extends TimedRobot {
                 lift.setPercentOutput(0);
                 break;
             case MovingDown:
-                if (!K.LIFT_BOTTOM_SENSOR.get()) {
+                if (lift.getReverseLimit()) {
                     liftState = LiftState.Bottom;
                     lift.setPercentOutput(0);
-                } else lift.setPercentOutput(K.LIFT_SPEED);
+                } else lift.setPercentOutput(-K.LIFT_SPEED);
                 break;
             }
         }
