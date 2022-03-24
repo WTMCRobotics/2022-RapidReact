@@ -137,6 +137,18 @@ public interface MotorController {
     public void setEncoderPosition(double position);
 
     /**
+     * Returns the status of the forward limit switch.
+     * @return Whether the forward limit switch is pressed
+     */
+    public boolean getForwardLimit();
+
+    /**
+     * Returns the status of the reverse limit switch.
+     * @return Whether the reverse limit switch is pressed
+     */
+    public boolean getReverseLimit();
+
+    /**
      * Type of motor controller, for MotorControllerFactory
      */
     public static enum Type {

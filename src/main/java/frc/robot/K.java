@@ -24,12 +24,8 @@ public final class K {
 
     // DIO IDs
 
-    /** lift sensor - bottom */
-    public static final int LIFT_BOTTOM_SENSOR_ID = 0;
-    /** lift sensor - top */
-    public static final int LIFT_TOP_SENSOR_ID = 1;
     /** sensor for counting balls */
-    public static final int SHOOTER_SENSOR_ID = 2;
+    public static final int SHOOTER_SENSOR_ID = 0;
     /** Pixy LEDs - red */
     public static final int PIXY_LED_RED_ID = 3;
     /** Pixy LEDs - green */
@@ -39,10 +35,6 @@ public final class K {
 
     // Binary Sensors
 
-    /** lift sensor - bottom */
-    public static final DigitalInput LIFT_BOTTOM_SENSOR = new DigitalInput(LIFT_BOTTOM_SENSOR_ID);
-    /** lift sensor - top */
-    public static final DigitalInput LIFT_TOP_SENSOR = new DigitalInput(LIFT_TOP_SENSOR_ID);
     /** sensor for counting balls */
     public static final DigitalInput SHOOTER_SENSOR = new DigitalInput(SHOOTER_SENSOR_ID);
     /** Pixy LEDs - red */

@@ -2,6 +2,7 @@ package frc.robot.motor;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkMaxLimitSwitch;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxRelativeEncoder;
 import com.revrobotics.CANSparkMax.ControlType;
@@ -122,6 +123,16 @@ public class SparkMotorController implements MotorController {
     @Override
     public void setEncoderPosition(double position) {
         encoder.setPosition(position);
+    }
+
+    @Override
+    public boolean getForwardLimit() {
+        return controller.getForwardLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyOpen).isPressed();
+    }
+
+    @Override
+    public boolean getReverseLimit() {
+        return controller.getReverseLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyOpen).isPressed();
     }
     
 }

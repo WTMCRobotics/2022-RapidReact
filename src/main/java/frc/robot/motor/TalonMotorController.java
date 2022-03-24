@@ -120,5 +120,15 @@ public class TalonMotorController implements MotorController {
     public void setEncoderPosition(double position) {
         controller.setSelectedSensorPosition(position * K.encoderRotation);
     }
+
+    @Override
+    public boolean getForwardLimit() {
+        return controller.isFwdLimitSwitchClosed() != 0;
+    }
+
+    @Override
+    public boolean getReverseLimit() {
+        return controller.isRevLimitSwitchClosed() != 0;
+    }
     
 }
